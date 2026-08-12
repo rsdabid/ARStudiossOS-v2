@@ -41,6 +41,7 @@
       radial-gradient(ellipse at bottom left, rgba(94,231,176,0.05), transparent 50%), var(--bg);
     color: var(--text); min-height: 100vh; padding: 20px; background-attachment: fixed;
   }
+  html { overflow-x: hidden; }
   .container { max-width: 1400px; margin: 0 auto; }
   .header {
     display: flex; justify-content: space-between; align-items: center;
@@ -690,14 +691,22 @@
   .spin-mark { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; animation: pulse 1.4s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.85; } }
   @media (max-width: 640px) {
-    body { padding: 12px; }
-    .header { flex-wrap: wrap; gap: 10px; }
+    body { padding: 8px; }
+    .header { flex-wrap: wrap; gap: 8px; padding: 12px 14px; border-radius: 20px; justify-content: center; }
+    .header .logo { width: 100%; text-align: center; display: flex; justify-content: center; }
+    .header-right { width: 100%; justify-content: center; flex-wrap: wrap; gap: 6px; }
+    .header-right .btn { padding: 7px 12px; font-size: 12px; }
+    .header-right .user-badge { padding: 6px 10px; font-size: 11px; }
     .nav-tab { padding: 9px 14px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
     .nav-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .nav-tabs::-webkit-scrollbar { display: none; }
     .modal { padding: 20px 16px; border-radius: 16px; }
     .section-header { flex-wrap: wrap; gap: 10px; }
     .toolbar select, .toolbar .btn-tb { min-height: 38px; }
+    .page-title { font-size: 28px; }
+    .period-label { font-size: 12px; }
+    .container { max-width: 100vw; overflow-x: hidden; }
+    .fin-card h3 { font-size: 12px; }
   }
 
   /* FINANCE */
