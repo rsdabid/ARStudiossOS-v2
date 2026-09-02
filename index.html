@@ -788,23 +788,31 @@
   .prio-col.tier-b .prio-dot { background: #ffce4a; }
   .prio-col.tier-c { border-top: 3px solid #4a9eff; }
   .prio-col.tier-c .prio-dot { background: #4a9eff; }
-  .prio-cards { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
+  .prio-cards { flex: 1; display: flex; flex-direction: column; gap: 0; min-height: 40px; }
+  /* Spreadsheet header */
+  .prio-sheet-head { display: grid; grid-template-columns: 1.2fr 1fr 1.5fr 40px; gap: 0; font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); opacity: 0.6; padding: 6px 0; }
+  .prio-sheet-head span { padding: 0 10px; }
+  /* Row = card */
   .prio-card {
-    display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: start;
-    background: rgba(5,13,10,0.5); border: 1px solid var(--border); border-radius: 10px;
-    padding: 12px 14px; cursor: grab; transition: all 0.15s;
+    display: grid; grid-template-columns: 1.2fr 1fr 1.5fr 40px; gap: 0; align-items: stretch;
+    background: rgba(5,13,10,0.45); border: 1px solid var(--border); border-top: none;
+    cursor: grab; transition: all 0.12s;
   }
-  .prio-card:hover { border-color: var(--green-deep); background: rgba(5,13,10,0.7); }
+  .prio-card:first-of-type { border-top: 1px solid var(--border); border-radius: 8px 8px 0 0; }
+  .prio-card:last-of-type { border-radius: 0 0 8px 8px; }
+  .prio-card:only-of-type { border-top: 1px solid var(--border); border-radius: 8px; }
+  .prio-card:hover { background: rgba(5,13,10,0.65); }
   .prio-card:active { cursor: grabbing; }
   .prio-card.dragging { opacity: 0.4; }
+  .prio-cell { padding: 10px 12px; border-right: 1px solid var(--border); display: flex; align-items: center; min-height: 40px; }
+  .prio-cell:last-child { border-right: none; }
   .prio-card-name { font-size: 13px; font-weight: 700; color: var(--text); font-family: var(--font-display); }
-  .prio-card-socials { display: flex; flex-direction: column; gap: 4px; }
-  .prio-card-socials a { font-size: 11px; color: var(--green); text-decoration: none; word-break: break-all; }
+  .prio-card-socials { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+  .prio-card-socials a { font-size: 11px; color: var(--green); text-decoration: none; white-space: nowrap; }
   .prio-card-socials a:hover { text-decoration: underline; }
   .prio-card-notes { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
-  .prio-card-actions { display: flex; gap: 4px; margin-top: 6px; grid-column: 1 / -1; justify-content: flex-end; }
-  .prio-card-btn { background: rgba(94,231,176,0.08); border: 1px solid rgba(94,231,176,0.25); color: #7ee2b8; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; cursor: pointer; transition: all 0.15s; }
-  .prio-card-btn:hover { background: rgba(94,231,176,0.18); }
+  .prio-card-btn { background: none; border: none; color: var(--text-muted); font-size: 14px; cursor: pointer; padding: 4px; transition: color 0.12s; }
+  .prio-card-btn:hover { color: var(--green); }
   .prio-empty { text-align: center; font-size: 11px; color: var(--text-muted); opacity: 0.5; padding: 24px 12px; font-style: italic; }
 
   .leads-board { display: grid; grid-template-columns: repeat(6, minmax(240px, 1fr)); gap: 14px; padding-bottom: 20px; overflow-x: auto; }
@@ -4656,9 +4664,9 @@
 
   // ===== Priority Clients =====
   const PRIO_TIERS = [
-    { key: 'a', label: 'A · Top Priority', cls: 'tier-a' },
-    { key: 'b', label: 'B · Medium Priority', cls: 'tier-b' },
-    { key: 'c', label: 'C · Low Priority', cls: 'tier-c' },
+    { key: 'a', label: '★★★ Top Priority', cls: 'tier-a' },
+    { key: 'b', label: '★★ Medium Priority', cls: 'tier-b' },
+    { key: 'c', label: '★ Low Priority', cls: 'tier-c' },
   ];
 
   function ensurePrioClients() {
@@ -4677,34 +4685,30 @@
       tierMap[t].push(c);
     });
 
-    const socialLinks = (socials) => {
-      if (!socials || !socials.length) return '<span style="font-size:11px;color:var(--text-muted);opacity:0.5">No links</span>';
-      return socials.map(s => {
-        const icon = s.platform === 'instagram' ? '📷' : s.platform === 'linkedin' ? '💼' : s.platform === 'email' ? '✉️' : '🔗';
-        const url = s.url || '';
-        if (url.startsWith('http')) return `<a href="${escapeAttr(url)}" target="_blank" onclick="event.stopPropagation()">${icon} ${escapeHtml(s.label || s.platform || url)}</a>`;
-        return `<span style="font-size:11px;color:var(--text-muted)">${icon} ${escapeHtml(s.label || url)}</span>`;
-      }).join('');
-    };
-
     const cardHtml = (c) => {
+      const socialsHtml = (c.socials && c.socials.length)
+        ? c.socials.map(s => {
+            const icon = s.platform === 'instagram' ? '📷' : s.platform === 'linkedin' ? '💼' : s.platform === 'email' ? '✉️' : '🔗';
+            const url = s.url || '';
+            if (url.startsWith('http')) return `<a href="${escapeAttr(url)}" target="_blank" onclick="event.stopPropagation()">${icon} ${escapeHtml(s.label || s.platform || url)}</a>`;
+            return `<span style="font-size:11px;color:var(--text-muted)">${icon} ${escapeHtml(s.label || url)}</span>`;
+          }).join('')
+        : '<span style="opacity:0.4;font-size:11px">—</span>';
+
       return `<div class="prio-card" draggable="true"
           ondragstart="prioDragStart(event,'${c.id}')"
           ondragend="prioDragEnd(event)">
-        <div>
-          <div class="prio-card-name">${escapeHtml(c.name || 'Unnamed')}</div>
-        </div>
-        <div class="prio-card-socials">${socialLinks(c.socials)}</div>
-        <div class="prio-card-notes">${c.notes ? escapeHtml(c.notes) : '<span style="opacity:0.4">No notes</span>'}</div>
-        <div class="prio-card-actions">
-          <button class="prio-card-btn" onclick="event.stopPropagation();openPriorityEditor('${c.id}')">✎ Edit</button>
-        </div>
+        <div class="prio-cell"><span class="prio-card-name">${escapeHtml(c.name || 'Unnamed')}</span></div>
+        <div class="prio-cell"><div class="prio-card-socials">${socialsHtml}</div></div>
+        <div class="prio-cell"><span class="prio-card-notes">${c.notes ? escapeHtml(c.notes) : '<span style="opacity:0.4">—</span>'}</span></div>
+        <div class="prio-cell" style="justify-content:center;border-right:none"><button class="prio-card-btn" onclick="event.stopPropagation();openPriorityEditor('${c.id}')" title="Edit">✎</button></div>
       </div>`;
     };
 
     const colHtml = PRIO_TIERS.map(t => {
       const cards = tierMap[t.key];
-      const body = cards.length ? cards.map(cardHtml).join('') : `<div class="prio-empty">Drag clients here</div>`;
+      const sheetHead = cards.length ? `<div class="prio-sheet-head"><span>Client</span><span>Socials</span><span>Notes</span><span></span></div>` : '';
+      const body = cards.length ? sheetHead + cards.map(cardHtml).join('') : `<div class="prio-empty">Drag clients here</div>`;
       return `<div class="prio-col ${t.cls}" data-tier="${t.key}"
           ondragover="prioDragOver(event)"
           ondragleave="prioDragLeave(event)"
