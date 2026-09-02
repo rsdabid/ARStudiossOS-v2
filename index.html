@@ -1412,6 +1412,7 @@
       data.pointTiers = s.point_tiers || JSON.parse(JSON.stringify(DEFAULT_DATA.pointTiers));
       data.rates = s.rates || JSON.parse(JSON.stringify(DEFAULT_DATA.rates));
       data.lastRolloverFor = s.last_rollover_for || null;
+      data.priorityClients = s.priority_clients || [];
 
       // Period settings → per-period maps
       data.monthRates = {};
@@ -1529,7 +1530,8 @@
 
       // 1. Settings
       const sMap = { adminPass:'admin_pass', editorPass:'editor_pass', split:'split',
-                     pointTiers:'point_tiers', rates:'rates', lastRolloverFor:'last_rollover_for' };
+                     pointTiers:'point_tiers', rates:'rates', lastRolloverFor:'last_rollover_for',
+                     priorityClients:'priority_clients' };
       const sChanged = {};
       let hasSC = false;
       for (const [jsK, dbK] of Object.entries(sMap)) {
@@ -1827,7 +1829,8 @@
     case 'settings': {
       if (eventType === 'UPDATE' && nw) {
         const m = { admin_pass:'adminPass', editor_pass:'editorPass', split:'split',
-                    point_tiers:'pointTiers', rates:'rates', last_rollover_for:'lastRolloverFor' };
+                    point_tiers:'pointTiers', rates:'rates', last_rollover_for:'lastRolloverFor',
+                    priority_clients:'priorityClients' };
         for (const [dbK, jsK] of Object.entries(m)) {
           if (nw[dbK] !== undefined && JSON.stringify(data[jsK]) !== JSON.stringify(nw[dbK])) { data[jsK] = nw[dbK]; changed = true; }
         }
