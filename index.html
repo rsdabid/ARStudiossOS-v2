@@ -770,51 +770,6 @@
   .fin-bin-btn:hover { color: var(--text) !important; border-color: var(--green-deep) !important; background: rgba(94,231,176,0.05) !important; }
 
   /* Leads pipeline board */
-  /* Priority Clients board */
-  .prio-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 12px; }
-  @media (max-width: 900px) { .prio-board { grid-template-columns: 1fr; } }
-  .prio-col {
-    background: rgba(13,31,24,0.4); border: 1px solid var(--border); border-radius: 14px;
-    padding: 14px; display: flex; flex-direction: column; min-height: 200px;
-  }
-  .prio-col.drag-over { border-color: var(--green); background: rgba(94,231,176,0.04); }
-  .prio-col-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; margin-bottom: 8px; border-bottom: 1px dashed rgba(28,56,43,0.5); }
-  .prio-col-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; font-family: var(--font-display); letter-spacing: -0.01em; color: var(--text); }
-  .prio-col-title .prio-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .prio-col-count { font-size: 11px; color: var(--text-muted); font-weight: 600; }
-  .prio-col.tier-a { border-top: 3px solid #ff5252; }
-  .prio-col.tier-a .prio-dot { background: #ff5252; }
-  .prio-col.tier-b { border-top: 3px solid #ffce4a; }
-  .prio-col.tier-b .prio-dot { background: #ffce4a; }
-  .prio-col.tier-c { border-top: 3px solid #4a9eff; }
-  .prio-col.tier-c .prio-dot { background: #4a9eff; }
-  .prio-cards { flex: 1; display: flex; flex-direction: column; gap: 0; min-height: 40px; }
-  /* Spreadsheet header */
-  .prio-sheet-head { display: grid; grid-template-columns: 1.2fr 1fr 1.5fr 40px; gap: 0; font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); opacity: 0.6; padding: 6px 0; }
-  .prio-sheet-head span { padding: 0 10px; }
-  /* Row = card */
-  .prio-card {
-    display: grid; grid-template-columns: 1.2fr 1fr 1.5fr 40px; gap: 0; align-items: stretch;
-    background: rgba(5,13,10,0.45); border: 1px solid var(--border); border-top: none;
-    cursor: grab; transition: all 0.12s;
-  }
-  .prio-card:first-of-type { border-top: 1px solid var(--border); border-radius: 8px 8px 0 0; }
-  .prio-card:last-of-type { border-radius: 0 0 8px 8px; }
-  .prio-card:only-of-type { border-top: 1px solid var(--border); border-radius: 8px; }
-  .prio-card:hover { background: rgba(5,13,10,0.65); }
-  .prio-card:active { cursor: grabbing; }
-  .prio-card.dragging { opacity: 0.4; }
-  .prio-cell { padding: 10px 12px; border-right: 1px solid var(--border); display: flex; align-items: center; min-height: 40px; }
-  .prio-cell:last-child { border-right: none; }
-  .prio-card-name { font-size: 13px; font-weight: 700; color: var(--text); font-family: var(--font-display); }
-  .prio-card-socials { display: flex; flex-wrap: wrap; gap: 4px 8px; }
-  .prio-card-socials a { font-size: 11px; color: var(--green); text-decoration: none; white-space: nowrap; }
-  .prio-card-socials a:hover { text-decoration: underline; }
-  .prio-card-notes { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
-  .prio-card-btn { background: none; border: none; color: var(--text-muted); font-size: 14px; cursor: pointer; padding: 4px; transition: color 0.12s; }
-  .prio-card-btn:hover { color: var(--green); }
-  .prio-empty { text-align: center; font-size: 11px; color: var(--text-muted); opacity: 0.5; padding: 24px 12px; font-style: italic; }
-
   .leads-board { display: grid; grid-template-columns: repeat(6, minmax(240px, 1fr)); gap: 14px; padding-bottom: 20px; overflow-x: auto; }
   @media (max-width: 1400px) { .leads-board { grid-template-columns: repeat(3, minmax(240px, 1fr)); } }
   @media (max-width: 900px) { .leads-board { grid-template-columns: 1fr; } .lead-col { min-height: 0; } .lead-empty-col { padding: 14px; } }
@@ -902,6 +857,43 @@
   /* overdue/due-today keep their stronger full highlight, overriding the tint */
   .lead-card.overdue { border-left-color: #ff5252 !important; }
   .lead-card.due-today { border-left-color: #ffce4a !important; }
+
+  /* Priority Clients — spreadsheet-style */
+  .pc-section { margin-bottom: 36px; }
+  .pc-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .pc-section-title { font-size: 22px; font-weight: 800; color: var(--text); font-family: var(--font-display); letter-spacing: -0.02em; }
+  .pc-section-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .pc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 1100px) { .pc-grid { grid-template-columns: 1fr; } }
+  .pc-col { background: rgba(5,13,10,0.3); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; min-height: 120px; }
+  .pc-col.drag-over { border-color: var(--green); background: rgba(94,231,176,0.04); }
+  .pc-col-head { padding: 10px 14px; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--font-display); color: var(--text); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+  .pc-col.tier-a .pc-col-head { border-top: 3px solid #ff5252; }
+  .pc-col.tier-b .pc-col-head { border-top: 3px solid #ffce4a; }
+  .pc-col.tier-c .pc-col-head { border-top: 3px solid #4a9eff; }
+  .pc-col-count { font-size: 10px; font-weight: 600; color: var(--text-muted); margin-left: auto; }
+  .pc-table { width: 100%; border-collapse: collapse; }
+  .pc-table th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); background: rgba(5,13,10,0.25); }
+  .pc-table td { font-size: 12px; color: var(--text); padding: 8px 10px; border-bottom: 1px solid rgba(28,56,43,0.35); vertical-align: top; }
+  .pc-table tr { transition: background 0.12s; cursor: grab; }
+  .pc-table tr:hover { background: rgba(94,231,176,0.04); }
+  .pc-table tr:active { cursor: grabbing; }
+  .pc-table tr.dragging { opacity: 0.35; }
+  .pc-table .pc-name { font-weight: 700; font-family: var(--font-display); white-space: nowrap; }
+  .pc-table .pc-socials { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pc-table .pc-socials a { font-size: 11px; text-decoration: none; padding: 2px 6px; background: rgba(94,231,176,0.08); border: 1px solid rgba(94,231,176,0.2); border-radius: 5px; color: #7ee2b8; white-space: nowrap; transition: all 0.12s; }
+  .pc-table .pc-socials a:hover { background: rgba(94,231,176,0.18); border-color: var(--green); }
+  .pc-table .pc-notes { font-size: 11px; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pc-table .pc-edit-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); font-size: 11px; padding: 3px 8px; border-radius: 5px; cursor: pointer; transition: all 0.12s; white-space: nowrap; }
+  .pc-table .pc-edit-btn:hover { color: var(--green); border-color: var(--green-deep); }
+  .pc-empty { text-align: center; padding: 24px 12px; font-size: 11px; color: var(--text-muted); opacity: 0.5; font-style: italic; }
+  .pc-divider { border: none; border-top: 1px dashed rgba(28,56,43,0.5); margin: 32px 0 24px; }
+  .pc-social-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .pc-social-row select, .pc-social-row input { padding: 8px 10px; background: rgba(5,13,10,0.5); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font-ui); font-size: 12px; }
+  .pc-social-row select { width: 120px; flex-shrink: 0; }
+  .pc-social-row input { flex: 1; min-width: 0; }
+  .pc-social-row .pc-rm-link { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
+  .pc-social-row .pc-rm-link:hover { color: #ff5252; }
 
   /* Paid celebration */
   #paidCelebration { position: fixed; inset: 0; z-index: 900; pointer-events: none; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.35s; overflow: hidden; }
@@ -1104,16 +1096,22 @@
   </div>
 
   <div class="page" id="page-leads">
-    <div class="section-header">
-      <div>
-        <div class="section-title">Priority Clients</div>
-        <div class="section-sub">Rank your clients by importance · Drag between tiers</div>
+    <!-- Priority Clients section -->
+    <div class="pc-section">
+      <div class="pc-section-header">
+        <div>
+          <div class="pc-section-title">Priority Clients</div>
+          <div class="pc-section-sub">Drag rows between tiers · Click ✎ to edit</div>
+        </div>
+        <button class="btn btn-primary" onclick="openPcEditor()" style="margin-left:auto">＋ Add Client</button>
       </div>
-      <button class="btn btn-primary" onclick="openPriorityEditor()" style="margin-left:auto">＋ Add Client</button>
+      <div id="pcContent"></div>
     </div>
-    <div id="priorityContent"></div>
 
-    <div class="section-header" style="margin-top:36px">
+    <hr class="pc-divider">
+
+    <!-- Leads Pipeline (existing) -->
+    <div class="section-header">
       <div>
         <div class="section-title">Leads Pipeline</div>
         <div class="section-sub">Drag cards between stages · Bump follow-up dates to keep prospects warm</div>
@@ -4645,6 +4643,228 @@
       </div>`;
   }
 
+  // ===== Priority Clients =====
+  const PC_TIERS = [
+    { key:'a', label:'★★★ Top Priority', cls:'tier-a' },
+    { key:'b', label:'★★ Medium Priority', cls:'tier-b' },
+    { key:'c', label:'★ Low Priority', cls:'tier-c' },
+  ];
+  const PC_PLATFORMS = [
+    { key:'instagram', icon:'📷', label:'Instagram' },
+    { key:'linkedin',  icon:'💼', label:'LinkedIn' },
+    { key:'email',     icon:'✉️', label:'Email' },
+    { key:'website',   icon:'🌐', label:'Website' },
+    { key:'other',     icon:'🔗', label:'Other' },
+  ];
+
+  function ensurePc() { if (!Array.isArray(data.priorityClients)) data.priorityClients = []; }
+
+  function renderPriorityClients() {
+    if (!isAdmin()) return;
+    ensurePc();
+    const container = document.getElementById('pcContent');
+    if (!container) return;
+
+    const tierMap = { a:[], b:[], c:[] };
+    data.priorityClients.forEach(c => {
+      const t = tierMap[c.tier] ? c.tier : 'c';
+      tierMap[t].push(c);
+    });
+
+    const socialHtml = (socials) => {
+      if (!socials || !socials.length) return '<span style="color:var(--text-muted);font-size:11px">—</span>';
+      return '<div class="pc-socials">' + socials.map(s => {
+        const plat = PC_PLATFORMS.find(p => p.key === s.platform) || PC_PLATFORMS[4];
+        const display = s.label || plat.label;
+        if (s.platform === 'email' && s.url) return `<a href="mailto:${escapeAttr(s.url)}" title="${escapeAttr(s.url)}" onclick="event.stopPropagation()">${plat.icon} ${escapeHtml(display)}</a>`;
+        if (s.url) return `<a href="${escapeAttr(s.url.startsWith('http') ? s.url : 'https://'+s.url)}" target="_blank" rel="noopener" title="${escapeAttr(s.url)}" onclick="event.stopPropagation()">${plat.icon} ${escapeHtml(display)}</a>`;
+        return `<span style="font-size:11px;color:var(--text-muted)">${plat.icon} ${escapeHtml(display)}</span>`;
+      }).join('') + '</div>';
+    };
+
+    const colHtml = PC_TIERS.map(tier => {
+      const clients = tierMap[tier.key];
+      let body = '';
+      if (clients.length === 0) {
+        body = `<div class="pc-empty">Drag clients here</div>`;
+      } else {
+        body = `<table class="pc-table"><thead><tr><th>Client</th><th>Socials</th><th>Notes</th><th></th></tr></thead><tbody>` +
+          clients.map(c => `<tr draggable="true" data-pcid="${c.id}"
+              ondragstart="pcDragStart(event,'${c.id}')"
+              ondragend="pcDragEnd(event)">
+            <td class="pc-name">${escapeHtml(c.name)}</td>
+            <td>${socialHtml(c.socials)}</td>
+            <td class="pc-notes" title="${escapeAttr(c.notes||'')}">${escapeHtml(c.notes||'') || '<span style="opacity:0.35">—</span>'}</td>
+            <td><button class="pc-edit-btn" onclick="event.stopPropagation();openPcEditor('${c.id}')">✎</button></td>
+          </tr>`).join('') +
+          `</tbody></table>`;
+      }
+      return `<div class="pc-col ${tier.cls}" data-tier="${tier.key}"
+          ondragover="pcDragOver(event)"
+          ondragleave="pcDragLeave(event)"
+          ondrop="pcDrop(event,'${tier.key}')">
+        <div class="pc-col-head"><span>${tier.label}</span><span class="pc-col-count">${clients.length}</span></div>
+        ${body}
+      </div>`;
+    }).join('');
+
+    container.innerHTML = colHtml;
+  }
+
+  // Drag-and-drop for priority clients
+  let _pcDragId = null;
+  function pcDragStart(e, id) {
+    _pcDragId = id;
+    e.target.closest('tr').classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', id); } catch(_) {}
+  }
+  function pcDragEnd(e) {
+    const tr = e.target.closest('tr');
+    if (tr) tr.classList.remove('dragging');
+    document.querySelectorAll('.pc-col.drag-over').forEach(c => c.classList.remove('drag-over'));
+  }
+  function pcDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+  }
+  function pcDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-over');
+  }
+  async function pcDrop(e, tier) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const id = _pcDragId || e.dataTransfer.getData('text/plain');
+    if (!id) return;
+    ensurePc();
+    const client = data.priorityClients.find(c => c.id === id);
+    if (!client || client.tier === tier) return;
+    pushUndo();
+    client.tier = tier;
+    renderPriorityClients();
+    await saveData();
+    showToast(`Moved to ${PC_TIERS.find(t=>t.key===tier).label}`);
+  }
+
+  // Add / Edit modal
+  function openPcEditor(id) {
+    if (!isAdmin()) return;
+    ensurePc();
+    const existing = id ? data.priorityClients.find(c => c.id === id) : null;
+    const c = existing || { id:null, name:'', tier:'a', socials:[], notes:'' };
+    const socials = (c.socials && c.socials.length) ? [...c.socials] : [{ platform:'instagram', url:'', label:'' }];
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay show';
+    modal.id = 'pcEditorModal';
+
+    const tierOpts = PC_TIERS.map(t => `<option value="${t.key}" ${c.tier===t.key?'selected':''}>${t.label}</option>`).join('');
+
+    const socialRowHtml = (s, i) => {
+      const platOpts = PC_PLATFORMS.map(p => `<option value="${p.key}" ${s.platform===p.key?'selected':''}>${p.icon} ${p.label}</option>`).join('');
+      return `<div class="pc-social-row" data-idx="${i}">
+        <select onchange="this.parentElement.dataset.platform=this.value">${platOpts}</select>
+        <input type="text" placeholder="URL or handle" value="${escapeAttr(s.url||'')}">
+        <input type="text" placeholder="Display label" value="${escapeAttr(s.label||'')}" style="max-width:120px">
+        <button type="button" class="pc-rm-link" onclick="this.parentElement.remove()" title="Remove">×</button>
+      </div>`;
+    };
+
+    modal.innerHTML = `<div class="modal" style="max-width:520px">
+      <h3>${existing?'Edit Client':'New Priority Client'}</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+        <div>
+          <div class="notes-label">Client Name *</div>
+          <input type="text" id="pcName" value="${escapeAttr(c.name)}" placeholder="Company or person name" style="width:100%;padding:10px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui);font-size:13px">
+        </div>
+        <div>
+          <div class="notes-label">Tier</div>
+          <select id="pcTier" style="width:100%;padding:10px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui);font-size:13px">${tierOpts}</select>
+        </div>
+        <div>
+          <div class="notes-label">Social Links</div>
+          <div id="pcSocialRows">${socials.map(socialRowHtml).join('')}</div>
+          <button type="button" class="btn btn-secondary" onclick="addPcSocialRow()" style="margin-top:6px;font-size:11px;padding:6px 12px">＋ Add link</button>
+        </div>
+        <div>
+          <div class="notes-label">Notes</div>
+          <textarea id="pcNotes" rows="3" placeholder="Anything worth remembering..." style="width:100%;padding:10px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui);font-size:13px;resize:vertical">${escapeHtml(c.notes||'')}</textarea>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top:20px">
+        ${existing ? `<button class="btn btn-secondary" onclick="deletePc('${c.id}')" style="color:var(--red);border-color:rgba(255,82,82,0.3)">Delete</button>` : ''}
+        <button class="btn btn-secondary" onclick="document.getElementById('pcEditorModal').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="savePc('${c.id||''}')">Save</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
+    const escHandler = (ev) => { if (ev.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escHandler); } };
+    document.addEventListener('keydown', escHandler);
+    setTimeout(() => document.getElementById('pcName').focus(), 50);
+  }
+
+  function addPcSocialRow() {
+    const container = document.getElementById('pcSocialRows');
+    if (!container) return;
+    const idx = container.children.length;
+    const platOpts = PC_PLATFORMS.map(p => `<option value="${p.key}">${p.icon} ${p.label}</option>`).join('');
+    const row = document.createElement('div');
+    row.className = 'pc-social-row';
+    row.dataset.idx = idx;
+    row.innerHTML = `<select onchange="this.parentElement.dataset.platform=this.value">${platOpts}</select>
+      <input type="text" placeholder="URL or handle" value="">
+      <input type="text" placeholder="Display label" value="" style="max-width:120px">
+      <button type="button" class="pc-rm-link" onclick="this.parentElement.remove()" title="Remove">×</button>`;
+    container.appendChild(row);
+  }
+
+  async function savePc(id) {
+    ensurePc();
+    const name = document.getElementById('pcName').value.trim();
+    if (!name) { showToast('Client name is required'); return; }
+    const tier = document.getElementById('pcTier').value;
+    const notes = document.getElementById('pcNotes').value.trim();
+    const socialRows = document.querySelectorAll('#pcSocialRows .pc-social-row');
+    const socials = [];
+    socialRows.forEach(row => {
+      const sel = row.querySelector('select');
+      const inputs = row.querySelectorAll('input');
+      const platform = sel ? sel.value : 'other';
+      const url = inputs[0] ? inputs[0].value.trim() : '';
+      const label = inputs[1] ? inputs[1].value.trim() : '';
+      if (url || label) socials.push({ platform, url, label });
+    });
+    pushUndo();
+    if (id) {
+      const client = data.priorityClients.find(c => c.id === id);
+      if (client) Object.assign(client, { name, tier, socials, notes });
+    } else {
+      data.priorityClients.push({
+        id: 'pc_'+Date.now()+'_'+Math.floor(Math.random()*1000),
+        name, tier, socials, notes,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    document.getElementById('pcEditorModal').remove();
+    renderPriorityClients();
+    await saveData();
+    showToast(id ? 'Client updated' : 'Client added');
+  }
+
+  function deletePc(id) {
+    const editor = document.getElementById('pcEditorModal');
+    if (editor) editor.remove();
+    showConfirm('Delete this client?', 'This will remove the client from Priority Clients.', 'Delete', async () => {
+      pushUndo();
+      data.priorityClients = (data.priorityClients||[]).filter(c => c.id !== id);
+      renderPriorityClients();
+      await saveData();
+      showToast('Client removed');
+    }, true);
+  }
+
   // ===== Leads Pipeline =====
   const LEAD_STAGES = [
     { key:'new',       label:'New Lead',    cls:'stage-new' },
@@ -4663,222 +4883,6 @@
     if (!iso) return null;
     const d = new Date(iso+'T23:59:59').getTime();
     return Math.ceil((d - Date.now()) / (1000*60*60*24));
-  }
-
-  // ===== Priority Clients =====
-  const PRIO_TIERS = [
-    { key: 'a', label: '★★★ Top Priority', cls: 'tier-a' },
-    { key: 'b', label: '★★ Medium Priority', cls: 'tier-b' },
-    { key: 'c', label: '★ Low Priority', cls: 'tier-c' },
-  ];
-
-  function ensurePrioClients() {
-    if (!Array.isArray(data.priorityClients)) data.priorityClients = [];
-  }
-
-  function renderPriorityClients() {
-    if (!isAdmin()) return;
-    ensurePrioClients();
-    const container = document.getElementById('priorityContent');
-    if (!container) return;
-
-    const tierMap = { a: [], b: [], c: [] };
-    data.priorityClients.forEach(c => {
-      const t = tierMap[c.tier] ? c.tier : 'c';
-      tierMap[t].push(c);
-    });
-
-    const cardHtml = (c) => {
-      const socialsHtml = (c.socials && c.socials.length)
-        ? c.socials.map(s => {
-            const icon = s.platform === 'instagram' ? '📷' : s.platform === 'linkedin' ? '💼' : s.platform === 'email' ? '✉️' : '🔗';
-            const url = s.url || '';
-            if (url.startsWith('http')) return `<a href="${escapeAttr(url)}" target="_blank" onclick="event.stopPropagation()">${icon} ${escapeHtml(s.label || s.platform || url)}</a>`;
-            return `<span style="font-size:11px;color:var(--text-muted)">${icon} ${escapeHtml(s.label || url)}</span>`;
-          }).join('')
-        : '<span style="opacity:0.4;font-size:11px">—</span>';
-
-      return `<div class="prio-card" draggable="true"
-          ondragstart="prioDragStart(event,'${c.id}')"
-          ondragend="prioDragEnd(event)">
-        <div class="prio-cell"><span class="prio-card-name">${escapeHtml(c.name || 'Unnamed')}</span></div>
-        <div class="prio-cell"><div class="prio-card-socials">${socialsHtml}</div></div>
-        <div class="prio-cell"><span class="prio-card-notes">${c.notes ? escapeHtml(c.notes) : '<span style="opacity:0.4">—</span>'}</span></div>
-        <div class="prio-cell" style="justify-content:center;border-right:none"><button class="prio-card-btn" onclick="event.stopPropagation();openPriorityEditor('${c.id}')" title="Edit">✎</button></div>
-      </div>`;
-    };
-
-    const colHtml = PRIO_TIERS.map(t => {
-      const cards = tierMap[t.key];
-      const sheetHead = cards.length ? `<div class="prio-sheet-head"><span>Client</span><span>Socials</span><span>Notes</span><span></span></div>` : '';
-      const body = cards.length ? sheetHead + cards.map(cardHtml).join('') : `<div class="prio-empty">Drag clients here</div>`;
-      return `<div class="prio-col ${t.cls}" data-tier="${t.key}"
-          ondragover="prioDragOver(event)"
-          ondragleave="prioDragLeave(event)"
-          ondrop="prioDrop(event,'${t.key}')">
-        <div class="prio-col-head">
-          <span class="prio-col-title"><span class="prio-dot"></span>${t.label}</span>
-          <span class="prio-col-count">${cards.length}</span>
-        </div>
-        <div class="prio-cards">${body}</div>
-      </div>`;
-    }).join('');
-
-    container.innerHTML = `<div class="prio-board">${colHtml}</div>`;
-  }
-
-  // Drag and drop
-  let _prioDragId = null;
-  function prioDragStart(e, id) {
-    _prioDragId = id;
-    e.target.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    try { e.dataTransfer.setData('text/plain', id); } catch(_) {}
-  }
-  function prioDragEnd(e) {
-    e.target.classList.remove('dragging');
-    document.querySelectorAll('.prio-col.drag-over').forEach(c => c.classList.remove('drag-over'));
-  }
-  function prioDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    e.currentTarget.classList.add('drag-over');
-  }
-  function prioDragLeave(e) {
-    if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-over');
-  }
-  async function prioDrop(e, tier) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('drag-over');
-    const id = _prioDragId || e.dataTransfer.getData('text/plain');
-    if (!id) return;
-    const client = (data.priorityClients || []).find(c => c.id === id);
-    if (!client || client.tier === tier) return;
-    pushUndo();
-    client.tier = tier;
-    renderPriorityClients(); await saveData();
-    const tierLabel = PRIO_TIERS.find(t => t.key === tier).label;
-    showToast(`Moved to ${tierLabel}`);
-  }
-
-  function openPriorityEditor(id) {
-    if (!isAdmin()) return;
-    ensurePrioClients();
-    const existing = id ? data.priorityClients.find(c => c.id === id) : null;
-    const c = existing || { id: null, name: '', tier: 'a', socials: [], notes: '' };
-
-    // Build social rows
-    const socialsArr = c.socials && c.socials.length ? c.socials : [{ platform: '', url: '', label: '' }];
-    const socialRowsHtml = socialsArr.map((s, i) => prioSocialRow(s, i)).join('');
-
-    const tierOpts = PRIO_TIERS.map(t => `<option value="${t.key}" ${c.tier === t.key ? 'selected' : ''}>${t.label}</option>`).join('');
-
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay show';
-    modal.id = 'prioEditorModal';
-    modal.innerHTML = `<div class="modal" style="max-width:520px">
-      <h3>${existing ? 'Edit Client' : 'Add Priority Client'}</h3>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
-        <div class="grid-2col" style="gap:12px">
-          <div>
-            <div class="notes-label">Client Name *</div>
-            <input type="text" id="prioName" value="${escapeAttr(c.name)}" placeholder="Company or person" style="width:100%;padding:10px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui);font-size:13px">
-          </div>
-          <div>
-            <div class="notes-label">Priority Tier</div>
-            <select id="prioTier" style="width:100%;padding:10px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui);font-size:13px">${tierOpts}</select>
-          </div>
-        </div>
-        <div>
-          <div class="notes-label">Social Media / Links</div>
-          <div id="prioSocialsWrap" style="display:flex;flex-direction:column;gap:6px">${socialRowsHtml}</div>
-          <button type="button" onclick="addPrioSocialRow()" style="margin-top:6px;padding:6px 12px;font-size:11px;font-weight:700;background:transparent;border:1px dashed var(--border);border-radius:7px;color:var(--text-muted);cursor:pointer;font-family:var(--font-ui)">＋ Add link</button>
-        </div>
-        <div>
-          <div class="notes-label">Notes</div>
-          <textarea id="prioNotes" rows="3" placeholder="Anything about this client..." style="width:100%;padding:10px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui);font-size:13px;resize:vertical">${escapeHtml(c.notes)}</textarea>
-        </div>
-      </div>
-      <div class="modal-actions" style="margin-top:20px">
-        ${existing ? `<button class="btn btn-secondary" onclick="deletePrioClient('${c.id}')" style="color:var(--red);border-color:rgba(255,82,82,0.3)">Delete</button>` : ''}
-        <button class="btn btn-secondary" onclick="document.getElementById('prioEditorModal').remove()">Cancel</button>
-        <button class="btn btn-primary" onclick="savePrioClient('${c.id || ''}')">Save</button>
-      </div>
-    </div>`;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
-    const escH = (ev) => { if (ev.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escH); } };
-    document.addEventListener('keydown', escH);
-    setTimeout(() => document.getElementById('prioName').focus(), 50);
-  }
-
-  function prioSocialRow(s, idx) {
-    const platformOpts = ['','instagram','linkedin','email','website','other'].map(p =>
-      `<option value="${p}" ${(s.platform||'') === p ? 'selected' : ''}>${p ? p.charAt(0).toUpperCase()+p.slice(1) : 'Platform...'}</option>`
-    ).join('');
-    return `<div class="prio-social-row" style="display:flex;gap:6px;align-items:center">
-      <select data-field="platform" style="width:110px;padding:8px;font-size:11px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-ui)">${platformOpts}</select>
-      <input type="text" data-field="url" value="${escapeAttr(s.url||'')}" placeholder="Link or handle" style="flex:1;padding:8px;font-size:11px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-ui)">
-      <input type="text" data-field="label" value="${escapeAttr(s.label||'')}" placeholder="Display text" style="width:100px;padding:8px;font-size:11px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-ui)">
-      <span onclick="this.closest('.prio-social-row').remove()" style="cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px">×</span>
-    </div>`;
-  }
-
-  function addPrioSocialRow() {
-    const wrap = document.getElementById('prioSocialsWrap');
-    if (!wrap) return;
-    const div = document.createElement('div');
-    div.innerHTML = prioSocialRow({ platform:'', url:'', label:'' }, 0);
-    wrap.appendChild(div.firstElementChild);
-  }
-
-  function gatherPrioSocials() {
-    const rows = document.querySelectorAll('#prioSocialsWrap .prio-social-row');
-    const socials = [];
-    rows.forEach(row => {
-      const platform = row.querySelector('[data-field="platform"]').value;
-      const url = row.querySelector('[data-field="url"]').value.trim();
-      const label = row.querySelector('[data-field="label"]').value.trim();
-      if (platform || url) socials.push({ platform, url, label });
-    });
-    return socials;
-  }
-
-  async function savePrioClient(id) {
-    ensurePrioClients();
-    const name = document.getElementById('prioName').value.trim();
-    if (!name) { showToast('Name is required'); return; }
-    const payload = {
-      name,
-      tier: document.getElementById('prioTier').value || 'a',
-      socials: gatherPrioSocials(),
-      notes: document.getElementById('prioNotes').value.trim(),
-    };
-    pushUndo();
-    if (id) {
-      const client = data.priorityClients.find(c => c.id === id);
-      if (client) Object.assign(client, payload);
-    } else {
-      data.priorityClients.push({
-        id: 'pc_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-        ...payload,
-        createdAt: new Date().toISOString(),
-      });
-    }
-    document.getElementById('prioEditorModal').remove();
-    renderPriorityClients(); await saveData();
-    showToast(id ? 'Client updated' : 'Client added');
-  }
-
-  function deletePrioClient(id) {
-    const editor = document.getElementById('prioEditorModal');
-    if (editor) editor.remove();
-    showConfirm('Delete this client?', 'This removes them from the priority board.', 'Delete', async () => {
-      pushUndo();
-      data.priorityClients = (data.priorityClients || []).filter(c => c.id !== id);
-      renderPriorityClients(); await saveData();
-      showToast('Client removed');
-    }, true);
   }
 
   function renderLeads() {
