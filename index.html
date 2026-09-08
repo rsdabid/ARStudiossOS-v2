@@ -866,10 +866,7 @@
   .fin-chart-metric .metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
   .fin-chart-metric .metric-dot { width: 8px; height: 8px; border-radius: 50%; }
   .fin-chart-metric .metric-val { font-size: 22px; font-weight: 800; font-family: var(--font-display); letter-spacing: -0.02em; }
-  .fin-chart-range { display: flex; gap: 0; background: rgba(5,13,10,0.5); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-  .fin-chart-range button { padding: 6px 14px; font-size: 11px; font-weight: 700; font-family: var(--font-ui); border: none; background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.12s; }
-  .fin-chart-range button.active { background: var(--green-deep); color: #052e20; }
-  .fin-chart-range button:hover:not(.active) { color: var(--text); }
+  .fin-chart-range select { padding: 6px 28px 6px 12px; font-size: 11px; font-weight: 700; font-family: var(--font-ui); border: 1px solid var(--border); border-radius: 8px; background: rgba(5,13,10,0.5); color: var(--green-bright); cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237CF2C0'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
   .fin-chart-svg { width: 100%; height: 180px; display: block; }
   .fin-chart-line { stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: finDrawLine 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
   .fin-chart-line.profit-line { animation-delay: 0.15s; }
@@ -1120,9 +1117,13 @@
   <div class="page" id="page-finance">
     <div class="section-header"><div><div class="section-title">Finance</div><div class="section-sub" id="financePeriodLabel"></div></div></div>
     <div class="toolbar">
-      <span class="toolbar-label">Period:</span>
-      <select id="finYear" onchange="changeYearMonth('finance')"></select>
-      <select id="finMonthSel" onchange="changeYearMonth('finance')"></select>
+      <div class="toolbar-group">
+        <span class="toolbar-label">Period</span>
+        <select id="finYear" class="tb-select" onchange="changeYearMonth('finance')"></select>
+      </div>
+      <div class="toolbar-group">
+        <select id="finMonthSel" class="tb-select" onchange="changeYearMonth('finance')" style="padding-left:14px"></select>
+      </div>
     </div>
     <div id="finChartContainer"></div>
     <div id="financeContent"></div>
@@ -5306,8 +5307,14 @@
     if (!container) return;
     if (foodOnlyMode() || pmOnlyMode()) { container.innerHTML = ''; return; }
 
-    const rangeMap = { '3m': 3, '6m': 6, '1y': 12 };
-    const count = rangeMap[_finChartRange] || 6;
+    const rangeMap = { '1m': 1, '3m': 3, '6m': 6, '1y': 12 };
+    let count;
+    if (_finChartRange === 'all') {
+      const allPeriods = new Set([...Object.keys(data.expenses||{}), ...data.rows.map(r => r.period||'')].filter(Boolean));
+      count = Math.max(allPeriods.size, 12);
+    } else {
+      count = rangeMap[_finChartRange] || 6;
+    }
     const keys = getPastPeriodKeys(count);
 
     const points = keys.map(pk => {
@@ -5324,6 +5331,8 @@
 
     const totalRev = points.reduce((s,p) => s + p.rev, 0);
     const totalProfit = points.reduce((s,p) => s + p.profit, 0);
+    const avgProfit = points.length ? totalProfit / points.length : 0;
+    const avgMargin = totalRev ? Math.round((totalProfit / totalRev) * 100) : 0;
     const maxVal = Math.max(...points.map(p => Math.max(p.rev, Math.abs(p.profit))), 1);
 
     const W = 700, H = 180, padL = 0, padR = 0, padT = 10, padB = 4;
@@ -5383,9 +5392,8 @@
     const showEvery = count > 8 ? 2 : 1;
     const filteredLabels = monthLabels.map((l, i) => i % showEvery === 0 || i === monthLabels.length-1 ? l : '<span></span>');
 
-    const rangeButtons = ['3m','6m','1y'].map(r =>
-      `<button class="${_finChartRange===r?'active':''}" onclick="_finChartRange='${r}';renderFinChart()">${r.toUpperCase()}</button>`
-    ).join('');
+    const rangeOpts = [['1m','1 Month'],['3m','3 Months'],['6m','6 Months'],['1y','1 Year'],['all','Lifetime']];
+    const rangeSelect = `<select onchange="_finChartRange=this.value;renderFinChart()">${rangeOpts.map(([v,l]) => `<option value="${v}"${_finChartRange===v?' selected':''}>${l}</option>`).join('')}</select>`;
 
     container.innerHTML = `
       <div class="fin-chart-wrap">
@@ -5399,8 +5407,12 @@
               <div class="metric-label"><span class="metric-dot" style="background:#4a9eff"></span>Net Profit</div>
               <div class="metric-val" style="color:${totalProfit>=0?'#4a9eff':'var(--red)'}">$${fmtMoney(totalProfit)}</div>
             </div>
+            <div class="fin-chart-metric">
+              <div class="metric-label"><span class="metric-dot" style="background:#f5a623"></span>Avg Margin</div>
+              <div class="metric-val" style="color:#f5a623">${avgMargin}%</div>
+            </div>
           </div>
-          <div class="fin-chart-range">${rangeButtons}</div>
+          <div class="fin-chart-range">${rangeSelect}</div>
         </div>
         <div style="position:relative">
           <svg class="fin-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
@@ -5415,6 +5427,8 @@
                 <stop offset="100%" stop-color="#4a9eff" stop-opacity="0.01"/>
               </linearGradient>
             </defs>
+            <line x1="${padL}" y1="${toY(avgProfit).toFixed(1)}" x2="${W-padR}" y2="${toY(avgProfit).toFixed(1)}" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"/>
+            <text x="${W-padR-4}" y="${toY(avgProfit)-6}" fill="#f5a623" font-size="9" font-weight="700" text-anchor="end" opacity="0.7">Avg ${avgMargin}%</text>
             <path class="fin-chart-area" d="${revArea}" fill="url(#revGrad)"/>
             <path class="fin-chart-line" d="${revPath}" fill="none" stroke="#7CF2C0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             <path class="fin-chart-area profit-area" d="${profitArea}" fill="url(#profitGrad)"/>
