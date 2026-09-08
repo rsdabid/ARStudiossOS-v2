@@ -1258,7 +1258,7 @@
     individuals: [],
     expenses: {},
     notes: {},
-    split: { Rashid:77, Fahim:23 },
+    split: { Rashid:82, Fahim:18 },
     pointTiers: [
       { min:1, max:5, points:2 },
       { min:6, max:10, points:4 },
@@ -1273,6 +1273,18 @@
       { min:221, max:300, points:75 }
     ],
     rates: { summary: 122, split: 122, expense: 122, calc: 122 },
+    defaultSalaries: [
+      { name:'Abid', taka:35000 },
+      { name:'Fahim', taka:30000 },
+      { name:'Siyam', taka:50000 },
+      { name:'Raihan', taka:20000 },
+      { name:'Nobin', taka:20000 },
+      { name:'Kiron', taka:15000 },
+      { name:'Fardin', taka:15000 },
+      { name:'Mehraj', taka:10000 },
+      { name:'Araf', taka:10000 },
+      { name:'Khala', taka:8000 }
+    ],
     monthRates: {}
   };
   let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
@@ -1435,6 +1447,7 @@
       data.rates = s.rates || JSON.parse(JSON.stringify(DEFAULT_DATA.rates));
       data.lastRolloverFor = s.last_rollover_for || null;
       data.priorityClients = s.priority_clients || [];
+      data.defaultSalaries = s.default_salaries || JSON.parse(JSON.stringify(DEFAULT_DATA.defaultSalaries));
 
       // Period settings → per-period maps
       data.monthRates = {};
@@ -1553,7 +1566,7 @@
       // 1. Settings
       const sMap = { adminPass:'admin_pass', editorPass:'editor_pass', split:'split',
                      pointTiers:'point_tiers', rates:'rates', lastRolloverFor:'last_rollover_for',
-                     priorityClients:'priority_clients' };
+                     priorityClients:'priority_clients', defaultSalaries:'default_salaries' };
       const sChanged = {};
       let hasSC = false;
       for (const [jsK, dbK] of Object.entries(sMap)) {
@@ -1852,7 +1865,7 @@
       if (eventType === 'UPDATE' && nw) {
         const m = { admin_pass:'adminPass', editor_pass:'editorPass', split:'split',
                     point_tiers:'pointTiers', rates:'rates', last_rollover_for:'lastRolloverFor',
-                    priority_clients:'priorityClients' };
+                    priority_clients:'priorityClients', default_salaries:'defaultSalaries' };
         for (const [dbK, jsK] of Object.entries(m)) {
           if (nw[dbK] !== undefined && JSON.stringify(data[jsK]) !== JSON.stringify(nw[dbK])) { data[jsK] = nw[dbK]; changed = true; }
         }
@@ -5410,6 +5423,28 @@
     if (tip) tip.style.display = 'none';
   }
 
+  let _salarySeeding = false;
+  async function ensureSalaries(pk) {
+    if (_salarySeeding) return;
+    if (!data.expenses[pk]) data.expenses[pk] = [];
+    const list = data.expenses[pk];
+    const hasSalary = list.some(e => e.type === 'salary' && e.salaryKind === 'salary');
+    if (hasSalary) return;
+    const defs = data.defaultSalaries || DEFAULT_DATA.defaultSalaries;
+    if (!defs || !defs.length) return;
+    _salarySeeding = true;
+    defs.forEach(d => {
+      list.push({
+        id: 'e_'+Date.now()+'_'+Math.floor(Math.random()*10000),
+        name: d.name, usd: null, taka: d.taka, notes: '',
+        type: 'salary', salaryKind: 'salary',
+        createdAt: new Date().toISOString()
+      });
+    });
+    await saveData();
+    _salarySeeding = false;
+  }
+
   function renderFinance() {
     const pk = activePeriodKey();
     document.getElementById('financePeriodLabel').textContent = 'Period: ' + periodLabel();
@@ -5417,6 +5452,7 @@
     // Food-only admin AND project manager: show ONLY the food expenses sheet
     if (foodOnlyMode() || pmOnlyMode()) { renderFoodOnly(pk); return; }
 
+    ensureSalaries(pk);
     renderFinChart();
 
     const rate = monthRate(pk);
@@ -5525,15 +5561,13 @@
       const d = new Date(iso);
       return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
     };
-    const renderExpRows = (rows, showKind) => rows.length === 0
-      ? `<tr><td colspan="${showKind?6:5}" style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;font-style:italic">None yet</td></tr>`
+    const renderExpRows = (rows) => rows.length === 0
+      ? `<tr><td colspan="5" style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;font-style:italic">None yet</td></tr>`
       : rows.map(e => {
           const usd = expenseUSD(e, rate);
           const tk = e.taka != null ? e.taka : Math.round(usd * rate);
-          const kindCell = showKind ? `<td><div class="exp-cell" onclick="toggleSalaryKind('${e.id}')" style="cursor:pointer">${(e.salaryKind==='bonus')?'<span style="color:#ffce4a;font-size:11px;font-weight:700">Bonus</span>':'<span style="color:#7ee2b8;font-size:11px;font-weight:700">Salary</span>'}</div></td>` : '';
           return `<tr>
             <td><div class="exp-cell ${e.name?'':'empty'}" onclick="editExpense(event,'${e.id}','name')">${e.name?escapeHtml(e.name):'Name'}</div>${e.createdAt?`<div style="font-size:9px;color:var(--text-muted);opacity:0.6;padding:0 8px">${fmtTS(e.createdAt)}</div>`:''}</td>
-            ${kindCell}
             <td><div class="exp-cell ${e.taka?'':'empty'}" onclick="editExpense(event,'${e.id}','taka')">${tk?`<span style="color:var(--green-bright)">৳ ${Number(tk).toLocaleString()}</span>`:'৳ 0'}</div></td>
             <td><div class="exp-cell ${usd?'':'empty'}" onclick="editExpense(event,'${e.id}','usd')">${usd?`<span class="exp-amount">$${usd.toLocaleString()}</span>`:'$0'}</div></td>
             <td><div class="exp-cell ${e.notes?'':'empty'}" onclick="editExpense(event,'${e.id}','notes')">${e.notes?escapeHtml(e.notes):'—'}</div></td>
@@ -5541,12 +5575,10 @@
           </tr>`;
         }).join('');
 
-    const expSection = (key, label, icon, showKind) => {
+    const expSection = (key, label, icon) => {
       const rows = expList.filter(e => (e.type||'regular') === key);
       const subtotal = rows.reduce((s,e) => s + expenseUSD(e, rate), 0);
-      const headCols = showKind
-        ? `<th>Expense</th><th style="width:64px">Type</th><th style="width:88px">Taka (৳)</th><th style="width:80px">USD ($)</th><th>Notes</th><th style="width:28px"></th>`
-        : `<th>Expense</th><th style="width:92px">Taka (৳)</th><th style="width:84px">USD ($)</th><th>Notes</th><th style="width:28px"></th>`;
+      const headCols = `<th>Expense</th><th style="width:92px">Taka (৳)</th><th style="width:84px">USD ($)</th><th>Notes</th><th style="width:28px"></th>`;
       return `<div class="exp-section tint-${key}">
         <div class="exp-section-head">
           <span class="es-title"><span class="es-icon">${icon}</span>${label}</span>
@@ -5554,9 +5586,26 @@
         </div>
         <table class="exp-table">
           <thead><tr>${headCols}</tr></thead>
-          <tbody>${renderExpRows(rows, showKind)}</tbody>
+          <tbody>${renderExpRows(rows, false)}</tbody>
         </table>
         <div class="exp-add" onclick="addExpense('${key}')">＋ Add ${label.toLowerCase()}</div>
+      </div>`;
+    };
+
+    const salaryBonusSection = (kind, label, icon) => {
+      const rows = expList.filter(e => e.type === 'salary' && (e.salaryKind || 'salary') === kind);
+      const subtotal = rows.reduce((s,e) => s + expenseUSD(e, rate), 0);
+      const headCols = `<th>Employee</th><th style="width:92px">Taka (৳)</th><th style="width:84px">USD ($)</th><th>Notes</th><th style="width:28px"></th>`;
+      return `<div class="exp-section tint-salary">
+        <div class="exp-section-head">
+          <span class="es-title"><span class="es-icon">${icon}</span>${label}</span>
+          <span class="es-total"><span style="color:var(--green-bright)">৳ ${taka(subtotal, rate).toLocaleString()}</span> <span style="color:var(--text-muted);font-weight:400">·</span> <span class="exp-amount">$${fmtMoney(subtotal)}</span></span>
+        </div>
+        <table class="exp-table">
+          <thead><tr>${headCols}</tr></thead>
+          <tbody>${renderExpRows(rows, false)}</tbody>
+        </table>
+        <div class="exp-add" onclick="addExpenseKind('${kind}')">＋ Add ${label.toLowerCase()}</div>
       </div>`;
     };
 
@@ -5569,13 +5618,14 @@
       <div class="grid-2col" style="gap:20px">
         <div>
           <div class="exp-col-title">Operating Costs</div>
-          ${expSection('regular','Regular Expenses','💳', false)}
-          ${expSection('food','Food Expenses','🍽️', false)}
+          ${expSection('regular','Regular Expenses','💳')}
+          ${expSection('food','Food Expenses','🍽️')}
         </div>
         <div>
           <div class="exp-col-title">People & Assets</div>
-          ${expSection('salary','Salary + Bonuses','💰', true)}
-          ${expSection('asset','Assets','🖥️', false)}
+          ${salaryBonusSection('salary','Salary','💰')}
+          ${salaryBonusSection('bonus','Bonuses','🎁')}
+          ${expSection('asset','Assets','🖥️')}
         </div>
       </div>
       <div style="margin-top:6px;padding:16px 18px;background:rgba(5,13,10,0.5);border-radius:12px;display:flex;justify-content:space-between;align-items:center">
@@ -5778,14 +5828,19 @@
       type: type || 'regular',
       createdAt: new Date().toISOString()
     };
-    if (item.type === 'salary') item.salaryKind = 'salary'; // default; toggle to 'bonus'
+    if (item.type === 'salary') item.salaryKind = 'salary';
     data.expenses[pk].push(item);
     renderFinance(); await saveData();
   }
-  async function toggleSalaryKind(id) {
-    const e = findExpense(id); if (!e) return;
-    pushUndo();
-    e.salaryKind = (e.salaryKind === 'bonus') ? 'salary' : 'bonus';
+  async function addExpenseKind(kind) {
+    const pk = activePeriodKey();
+    if (!data.expenses[pk]) data.expenses[pk] = [];
+    data.expenses[pk].push({
+      id: 'e_'+Date.now()+'_'+Math.floor(Math.random()*10000),
+      name:'', usd:null, taka:null, notes:'',
+      type:'salary', salaryKind: kind,
+      createdAt: new Date().toISOString()
+    });
     renderFinance(); await saveData();
   }
   function findExpense(id) {
