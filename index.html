@@ -871,9 +871,18 @@
   .fin-chart-range button.active { background: var(--green-deep); color: #052e20; }
   .fin-chart-range button:hover:not(.active) { color: var(--text); }
   .fin-chart-svg { width: 100%; height: 180px; display: block; }
+  .fin-chart-line { stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: finDrawLine 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
+  .fin-chart-line.profit-line { animation-delay: 0.15s; }
+  .fin-chart-area { opacity: 0; animation: finFadeArea 0.9s cubic-bezier(0.4,0,0.2,1) 0.5s forwards; }
+  .fin-chart-area.profit-area { animation-delay: 0.65s; }
+  .fin-chart-dot { opacity: 0; animation: finDotPop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  @keyframes finDrawLine { to { stroke-dashoffset: 0; } }
+  @keyframes finFadeArea { to { opacity: 1; } }
+  @keyframes finDotPop { to { opacity: 1; } }
   .fin-chart-labels { display: flex; justify-content: space-between; padding: 6px 0 0; }
   .fin-chart-labels span { font-size: 10px; color: var(--text-muted); opacity: 0.6; }
-  .fin-chart-tooltip { position: absolute; pointer-events: none; background: rgba(5,13,10,0.92); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: var(--text); z-index: 50; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  .fin-chart-tooltip { position: absolute; pointer-events: none; background: rgba(5,13,10,0.92); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: var(--text); z-index: 50; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.4); opacity: 0; transform: translateY(4px); transition: opacity 0.18s ease, transform 0.18s ease; }
+  .fin-chart-tooltip.visible { opacity: 1; transform: translateY(0); }
   .fin-chart-tooltip .tt-period { font-weight: 700; font-family: var(--font-display); margin-bottom: 4px; font-size: 12px; }
   .fin-chart-tooltip .tt-rev { color: #7CF2C0; }
   .fin-chart-tooltip .tt-profit { color: #4a9eff; }
@@ -1339,7 +1348,7 @@
     created_at:'createdAt', created_by:'createdBy'
   };
   const EXPENSE_FIELDS = {
-    id:'id', period:'period', name:'name', usd:'usd', taka:'taka', notes:'notes',
+    id:'id', period:'period', name:'name', usd:'usd', taka:'taka', bonus:'bonus', notes:'notes',
     type:'type', salary_kind:'salaryKind', created_at:'createdAt'
   };
   const LEAD_FIELDS = {
@@ -1407,6 +1416,7 @@
   function _snap() { return JSON.parse(JSON.stringify(data)); }
 
   // ===== LOAD — query all 12+ tables in parallel =====
+  let _needSplitSave = false;
   async function loadData() {
     try {
       if (!window.supabase) { showError('Supabase library failed to load — check internet / ad-blocker, then refresh'); throw new Error('no supabase lib'); }
@@ -1443,11 +1453,17 @@
       data.adminPass = s.admin_pass || DEFAULT_DATA.adminPass;
       data.editorPass = s.editor_pass || DEFAULT_DATA.editorPass;
       data.split = s.split || JSON.parse(JSON.stringify(DEFAULT_DATA.split));
+      if (data.split.Siam || data.split.Siyam) {
+        const extra = (data.split.Siam || 0) + (data.split.Siyam || 0);
+        delete data.split.Siam; delete data.split.Siyam;
+        data.split.Rashid = (data.split.Rashid || 0) + extra;
+        _needSplitSave = true;
+      }
       data.pointTiers = s.point_tiers || JSON.parse(JSON.stringify(DEFAULT_DATA.pointTiers));
       data.rates = s.rates || JSON.parse(JSON.stringify(DEFAULT_DATA.rates));
       data.lastRolloverFor = s.last_rollover_for || null;
       data.priorityClients = s.priority_clients || [];
-      data.defaultSalaries = s.default_salaries || JSON.parse(JSON.stringify(DEFAULT_DATA.defaultSalaries));
+      data.defaultSalaries = (s.default_salaries && s.default_salaries.length) ? s.default_salaries : JSON.parse(JSON.stringify(DEFAULT_DATA.defaultSalaries));
 
       // Period settings → per-period maps
       data.monthRates = {};
@@ -4613,11 +4629,11 @@
       .reduce((s,r) => s + (Number(r.revenue)||0), 0);
   }
   function expenseUSD(e, rate) {
-    // USD value of an expense. usd is source of truth; fall back to taka/rate or legacy amount.
     if (e.usd != null) return Number(e.usd) || 0;
     if (e.amount != null) return Number(e.amount) || 0;
     const r = rate || monthRate();
-    if (e.taka != null && r) return Math.round((e.taka / r) * 100) / 100;
+    const tk = (Number(e.taka) || 0) + (Number(e.bonus) || 0);
+    if (tk && r) return Math.round((tk / r) * 100) / 100;
     return 0;
   }
   function periodExpenses(pk) {
@@ -5318,12 +5334,25 @@
     const toY = (v) => padT + chartH - (v / maxVal) * chartH;
     const toX = (i) => padL + i * step;
 
-    const makePath = (dataKey) => {
-      return points.map((p, i) => `${i===0?'M':'L'}${toX(i).toFixed(1)},${toY(p[dataKey]).toFixed(1)}`).join(' ');
+    const makeSmoothPath = (dataKey) => {
+      if (points.length < 2) return `M${toX(0).toFixed(1)},${toY(points[0][dataKey]).toFixed(1)}`;
+      const pts = points.map((p,i) => [toX(i), toY(p[dataKey])]);
+      let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(i-1,0)], p1 = pts[i], p2 = pts[i+1], p3 = pts[Math.min(i+2, pts.length-1)];
+        const t = 0.35;
+        const cp1x = p1[0] + (p2[0] - p0[0]) * t / 3;
+        const cp1y = p1[1] + (p2[1] - p0[1]) * t / 3;
+        const cp2x = p2[0] - (p3[0] - p1[0]) * t / 3;
+        const cp2y = p2[1] - (p3[1] - p1[1]) * t / 3;
+        d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      }
+      return d;
     };
+    const makePath = makeSmoothPath;
     const makeArea = (dataKey) => {
       const base = toY(0);
-      const top = makePath(dataKey);
+      const top = makeSmoothPath(dataKey);
       return `${top} L${toX(points.length-1).toFixed(1)},${base} L${toX(0).toFixed(1)},${base} Z`;
     };
 
@@ -5386,11 +5415,12 @@
                 <stop offset="100%" stop-color="#4a9eff" stop-opacity="0.01"/>
               </linearGradient>
             </defs>
-            <path d="${revArea}" fill="url(#revGrad)"/>
-            <path d="${revPath}" fill="none" stroke="#7CF2C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="${profitArea}" fill="url(#profitGrad)"/>
-            <path d="${profitPath}" fill="none" stroke="#4a9eff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            ${points.map((p,i) => `<circle cx="${toX(i)}" cy="${toY(p.rev)}" r="3" fill="#0d1f18" stroke="#7CF2C0" stroke-width="1.5" opacity="0"/>`).join('')}
+            <path class="fin-chart-area" d="${revArea}" fill="url(#revGrad)"/>
+            <path class="fin-chart-line" d="${revPath}" fill="none" stroke="#7CF2C0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path class="fin-chart-area profit-area" d="${profitArea}" fill="url(#profitGrad)"/>
+            <path class="fin-chart-line profit-line" d="${profitPath}" fill="none" stroke="#4a9eff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            ${points.map((p,i) => `<circle class="fin-chart-dot" cx="${toX(i)}" cy="${toY(p.rev)}" r="3.5" fill="#0d1f18" stroke="#7CF2C0" stroke-width="1.5" style="animation-delay:${0.8 + i*0.08}s"/>`).join('')}
+            ${points.map((p,i) => `<circle class="fin-chart-dot" cx="${toX(i)}" cy="${toY(p.profit)}" r="3.5" fill="#0d1f18" stroke="#4a9eff" stroke-width="1.5" style="animation-delay:${0.95 + i*0.08}s"/>`).join('')}
             ${hoverRects}
           </svg>
           <div id="finChartTip" class="fin-chart-tooltip" style="display:none"></div>
@@ -5410,6 +5440,7 @@
       <div class="tt-rev">Revenue: $${fmtMoney(p.rev)}</div>
       <div class="tt-profit">Profit: $${fmtMoney(p.profit)}</div>`;
     tip.style.display = 'block';
+    requestAnimationFrame(() => tip.classList.add('visible'));
     const wrap = tip.parentElement;
     const rect = wrap.getBoundingClientRect();
     const tipW = tip.offsetWidth;
@@ -5420,7 +5451,7 @@
   }
   function hideFinChartTip() {
     const tip = document.getElementById('finChartTip');
-    if (tip) tip.style.display = 'none';
+    if (tip) { tip.classList.remove('visible'); setTimeout(() => { if (!tip.classList.contains('visible')) tip.style.display = 'none'; }, 200); }
   }
 
   let _salarySeeding = false;
@@ -5428,12 +5459,13 @@
     if (_salarySeeding) return;
     if (!data.expenses[pk]) data.expenses[pk] = [];
     const list = data.expenses[pk];
-    const hasSalary = list.some(e => e.type === 'salary' && e.salaryKind === 'salary');
-    if (hasSalary) return;
+    const existing = new Set(list.filter(e => e.type === 'salary' && e.salaryKind === 'salary').map(e => (e.name||'').trim().toLowerCase()));
     const defs = data.defaultSalaries || DEFAULT_DATA.defaultSalaries;
     if (!defs || !defs.length) return;
+    const toAdd = defs.filter(d => !existing.has(d.name.trim().toLowerCase()));
+    if (!toAdd.length) return;
     _salarySeeding = true;
-    defs.forEach(d => {
+    toAdd.forEach(d => {
       list.push({
         id: 'e_'+Date.now()+'_'+Math.floor(Math.random()*10000),
         name: d.name, usd: null, taka: d.taka, notes: '',
@@ -5592,20 +5624,37 @@
       </div>`;
     };
 
-    const salaryBonusSection = (kind, label, icon) => {
-      const rows = expList.filter(e => e.type === 'salary' && (e.salaryKind || 'salary') === kind);
+    const salarySection = () => {
+      const rows = expList.filter(e => e.type === 'salary' && (e.salaryKind || 'salary') === 'salary');
       const subtotal = rows.reduce((s,e) => s + expenseUSD(e, rate), 0);
-      const headCols = `<th>Employee</th><th style="width:92px">Taka (৳)</th><th style="width:84px">USD ($)</th><th>Notes</th><th style="width:28px"></th>`;
+      const salaryRows = rows.length === 0
+        ? `<tr><td colspan="6" style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;font-style:italic">None yet</td></tr>`
+        : rows.map(e => {
+            const tk = Number(e.taka) || 0;
+            const bn = Number(e.bonus) || 0;
+            const totalTk = tk + bn;
+            const usd = expenseUSD(e, rate);
+            const bnColor = bn > 0 ? 'color:#7CF2C0' : bn < 0 ? 'color:var(--red)' : 'color:var(--text-muted)';
+            const bnPrefix = bn > 0 ? '+' : '';
+            return `<tr>
+              <td><div class="exp-cell ${e.name?'':'empty'}" onclick="editExpense(event,'${e.id}','name')">${e.name?escapeHtml(e.name):'Name'}</div>${e.createdAt?`<div style="font-size:9px;color:var(--text-muted);opacity:0.6;padding:0 8px">${fmtTS(e.createdAt)}</div>`:''}</td>
+              <td><div class="exp-cell" onclick="editExpense(event,'${e.id}','taka')">${tk?`<span style="color:var(--green-bright)">৳ ${tk.toLocaleString()}</span>`:'৳ 0'}</div></td>
+              <td><div class="exp-cell" onclick="editExpense(event,'${e.id}','bonus')" style="cursor:pointer"><span style="${bnColor};font-weight:600">${bn ? bnPrefix + '৳ ' + Math.abs(bn).toLocaleString() : '—'}</span></div></td>
+              <td><div class="exp-cell">${usd?`<span class="exp-amount">$${usd.toLocaleString()}</span>`:'$0'}</div></td>
+              <td><div class="exp-cell ${e.notes?'':'empty'}" onclick="editExpense(event,'${e.id}','notes')">${e.notes?escapeHtml(e.notes):'—'}</div></td>
+              <td style="text-align:center"><span class="exp-del" onclick="deleteExpense('${e.id}')">🗑</span></td>
+            </tr>`;
+          }).join('');
       return `<div class="exp-section tint-salary">
         <div class="exp-section-head">
-          <span class="es-title"><span class="es-icon">${icon}</span>${label}</span>
+          <span class="es-title"><span class="es-icon">💰</span>Salary</span>
           <span class="es-total"><span style="color:var(--green-bright)">৳ ${taka(subtotal, rate).toLocaleString()}</span> <span style="color:var(--text-muted);font-weight:400">·</span> <span class="exp-amount">$${fmtMoney(subtotal)}</span></span>
         </div>
         <table class="exp-table">
-          <thead><tr>${headCols}</tr></thead>
-          <tbody>${renderExpRows(rows, false)}</tbody>
+          <thead><tr><th>Employee</th><th style="width:88px">Taka (৳)</th><th style="width:88px">Bonus (৳)</th><th style="width:76px">USD ($)</th><th>Notes</th><th style="width:28px"></th></tr></thead>
+          <tbody>${salaryRows}</tbody>
         </table>
-        <div class="exp-add" onclick="addExpenseKind('${kind}')">＋ Add ${label.toLowerCase()}</div>
+        <div class="exp-add" onclick="addExpenseKind('salary')">＋ Add salary</div>
       </div>`;
     };
 
@@ -5623,8 +5672,7 @@
         </div>
         <div>
           <div class="exp-col-title">People & Assets</div>
-          ${salaryBonusSection('salary','Salary','💰')}
-          ${salaryBonusSection('bonus','Bonuses','🎁')}
+          ${salarySection()}
           ${expSection('asset','Assets','🖥️')}
         </div>
       </div>
@@ -5850,7 +5898,7 @@
   function editExpense(ev, id, field) {
     const e = findExpense(id); if (!e) return;
     const td = ev.currentTarget.parentElement;
-    const isNum = (field === 'usd' || field === 'taka');
+    const isNum = (field === 'usd' || field === 'taka' || field === 'bonus');
     const type = isNum ? 'number' : 'text';
     const rate = monthRate();
     if (e.amount != null && e.usd == null) { e.usd = e.amount; delete e.amount; }
@@ -5868,7 +5916,10 @@
         e.taka = (num != null && rate) ? Math.round(num * rate) : e.taka;
       } else if (field === 'taka') {
         e.taka = num;
-        e.usd = (num != null && rate) ? Math.round((num / rate) * 100) / 100 : e.usd;
+        e.usd = null;
+      } else if (field === 'bonus') {
+        e.bonus = num;
+        e.usd = null;
       }
       renderFinance(); await saveData();
     };
@@ -6790,7 +6841,7 @@
       await rolloverIncomplete();
       const purged = purgeOldRecycleBin();
       const purgedExp = purgeOldExpenseBin();
-      if (purged || purgedExp) { await saveData(); }
+      if (purged || purgedExp || _needSplitSave) { await saveData(); _needSplitSave = false; }
       document.getElementById('loadingOverlay').style.display = 'none';
       if (session) showApp(); else {
         document.getElementById('loginScreen').style.display = 'flex';
