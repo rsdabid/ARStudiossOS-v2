@@ -858,36 +858,59 @@
   .lead-card.overdue { border-left-color: #ff5252 !important; }
   .lead-card.due-today { border-left-color: #ffce4a !important; }
 
-  /* Priority Clients — spreadsheet-style */
+  /* Finance chart — Stripe-style area graph */
+  .fin-chart-wrap { background: rgba(13,31,24,0.5); border: 1px solid var(--border); border-radius: 16px; padding: 20px 20px 16px; margin-bottom: 16px; }
+  .fin-chart-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .fin-chart-totals { display: flex; gap: 28px; flex-wrap: wrap; }
+  .fin-chart-metric { display: flex; flex-direction: column; gap: 2px; }
+  .fin-chart-metric .metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+  .fin-chart-metric .metric-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .fin-chart-metric .metric-val { font-size: 22px; font-weight: 800; font-family: var(--font-display); letter-spacing: -0.02em; }
+  .fin-chart-range { display: flex; gap: 0; background: rgba(5,13,10,0.5); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .fin-chart-range button { padding: 6px 14px; font-size: 11px; font-weight: 700; font-family: var(--font-ui); border: none; background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.12s; }
+  .fin-chart-range button.active { background: var(--green-deep); color: #052e20; }
+  .fin-chart-range button:hover:not(.active) { color: var(--text); }
+  .fin-chart-svg { width: 100%; height: 180px; display: block; }
+  .fin-chart-labels { display: flex; justify-content: space-between; padding: 6px 0 0; }
+  .fin-chart-labels span { font-size: 10px; color: var(--text-muted); opacity: 0.6; }
+  .fin-chart-tooltip { position: absolute; pointer-events: none; background: rgba(5,13,10,0.92); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: var(--text); z-index: 50; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  .fin-chart-tooltip .tt-period { font-weight: 700; font-family: var(--font-display); margin-bottom: 4px; font-size: 12px; }
+  .fin-chart-tooltip .tt-rev { color: #7CF2C0; }
+  .fin-chart-tooltip .tt-profit { color: #4a9eff; }
+  @media (max-width: 640px) { .fin-chart-totals { gap: 16px; } .fin-chart-metric .metric-val { font-size: 18px; } }
+
+  /* Priority Clients — clean spreadsheet layout */
   .pc-section { margin-bottom: 36px; }
   .pc-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
   .pc-section-title { font-size: 22px; font-weight: 800; color: var(--text); font-family: var(--font-display); letter-spacing: -0.02em; }
   .pc-section-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
-  .pc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .pc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   @media (max-width: 1100px) { .pc-grid { grid-template-columns: 1fr; } }
-  .pc-col { background: rgba(5,13,10,0.3); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; min-height: 120px; }
+  .pc-col { background: rgba(5,13,10,0.25); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; min-height: 100px; }
   .pc-col.drag-over { border-color: var(--green); background: rgba(94,231,176,0.04); }
-  .pc-col-head { padding: 10px 14px; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--font-display); color: var(--text); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
-  .pc-col.tier-a .pc-col-head { border-top: 3px solid #ff5252; }
-  .pc-col.tier-b .pc-col-head { border-top: 3px solid #ffce4a; }
-  .pc-col.tier-c .pc-col-head { border-top: 3px solid #4a9eff; }
-  .pc-col-count { font-size: 10px; font-weight: 600; color: var(--text-muted); margin-left: auto; }
+  .pc-col-head { padding: 10px 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; font-family: var(--font-display); color: var(--text-muted); display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border); }
+  .pc-col.tier-a .pc-col-head { border-top: 2px solid rgba(255,82,82,0.5); }
+  .pc-col.tier-b .pc-col-head { border-top: 2px solid rgba(255,206,74,0.45); }
+  .pc-col.tier-c .pc-col-head { border-top: 2px solid rgba(74,158,255,0.4); }
+  .pc-col-count { font-size: 10px; font-weight: 600; color: var(--text-muted); margin-left: auto; opacity: 0.6; }
   .pc-table { width: 100%; border-collapse: collapse; }
-  .pc-table th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); background: rgba(5,13,10,0.25); }
-  .pc-table td { font-size: 12px; color: var(--text); padding: 8px 10px; border-bottom: 1px solid rgba(28,56,43,0.35); vertical-align: top; }
-  .pc-table tr { transition: background 0.12s; cursor: grab; }
-  .pc-table tr:hover { background: rgba(94,231,176,0.04); }
-  .pc-table tr:active { cursor: grabbing; }
-  .pc-table tr.dragging { opacity: 0.35; }
-  .pc-table .pc-name { font-weight: 700; font-family: var(--font-display); white-space: nowrap; }
-  .pc-table .pc-socials { display: flex; gap: 6px; flex-wrap: wrap; }
-  .pc-table .pc-socials a { font-size: 11px; text-decoration: none; padding: 2px 6px; background: rgba(94,231,176,0.08); border: 1px solid rgba(94,231,176,0.2); border-radius: 5px; color: #7ee2b8; white-space: nowrap; transition: all 0.12s; }
-  .pc-table .pc-socials a:hover { background: rgba(94,231,176,0.18); border-color: var(--green); }
-  .pc-table .pc-notes { font-size: 11px; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pc-table .pc-edit-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); font-size: 11px; padding: 3px 8px; border-radius: 5px; cursor: pointer; transition: all 0.12s; white-space: nowrap; }
-  .pc-table .pc-edit-btn:hover { color: var(--green); border-color: var(--green-deep); }
-  .pc-empty { text-align: center; padding: 24px 12px; font-size: 11px; color: var(--text-muted); opacity: 0.5; font-style: italic; }
-  .pc-divider { border: none; border-top: 1px dashed rgba(28,56,43,0.5); margin: 32px 0 24px; }
+  .pc-table th { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 5px 10px; text-align: left; border-bottom: 1px solid rgba(28,56,43,0.3); opacity: 0.7; }
+  .pc-table td { font-size: 12.5px; color: var(--text); padding: 9px 10px; border-bottom: 1px solid rgba(28,56,43,0.25); vertical-align: top; }
+  .pc-table tbody tr { transition: background 0.12s; cursor: grab; }
+  .pc-table tbody tr:last-child td { border-bottom: none; }
+  .pc-table tbody tr:hover { background: rgba(94,231,176,0.03); }
+  .pc-table tbody tr:active { cursor: grabbing; }
+  .pc-table tbody tr.dragging { opacity: 0.35; }
+  .pc-table .pc-name { font-weight: 700; font-family: var(--font-display); white-space: nowrap; font-size: 13px; }
+  .pc-table .pc-socials { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pc-table .pc-socials a { font-size: 11px; text-decoration: none; padding: 2px 7px; background: rgba(94,231,176,0.06); border: 1px solid rgba(94,231,176,0.15); border-radius: 5px; color: #7ee2b8; white-space: nowrap; transition: all 0.12s; }
+  .pc-table .pc-socials a:hover { background: rgba(94,231,176,0.15); border-color: rgba(94,231,176,0.4); }
+  .pc-table .pc-notes { font-size: 12px; color: var(--text-muted); min-width: 80px; max-width: 300px; white-space: normal; line-height: 1.4; word-break: break-word; }
+  .pc-table .pc-edit-btn { background: none; border: none; color: var(--text-muted); font-size: 13px; padding: 2px 6px; cursor: pointer; transition: all 0.12s; opacity: 0.5; }
+  .pc-table tbody tr:hover .pc-edit-btn { opacity: 1; }
+  .pc-table .pc-edit-btn:hover { color: var(--green); }
+  .pc-empty { text-align: center; padding: 24px 12px; font-size: 11px; color: var(--text-muted); opacity: 0.4; font-style: italic; }
+  .pc-divider { border: none; border-top: 1px dashed rgba(28,56,43,0.4); margin: 36px 0 28px; }
   .pc-social-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
   .pc-social-row select, .pc-social-row input { padding: 8px 10px; background: rgba(5,13,10,0.5); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font-ui); font-size: 12px; }
   .pc-social-row select { width: 120px; flex-shrink: 0; }
@@ -1092,6 +1115,7 @@
       <select id="finYear" onchange="changeYearMonth('finance')"></select>
       <select id="finMonthSel" onchange="changeYearMonth('finance')"></select>
     </div>
+    <div id="finChartContainer"></div>
     <div id="financeContent"></div>
   </div>
 
@@ -1234,7 +1258,7 @@
     individuals: [],
     expenses: {},
     notes: {},
-    split: { Rashid:77, Fahim:18, Siam:5 },
+    split: { Rashid:77, Fahim:23 },
     pointTiers: [
       { min:1, max:5, points:2 },
       { min:6, max:10, points:4 },
@@ -4645,9 +4669,9 @@
 
   // ===== Priority Clients =====
   const PC_TIERS = [
-    { key:'a', label:'★★★ Top Priority', cls:'tier-a' },
-    { key:'b', label:'★★ Medium Priority', cls:'tier-b' },
-    { key:'c', label:'★ Low Priority', cls:'tier-c' },
+    { key:'a', label:'⭐⭐⭐ Top Priority', cls:'tier-a' },
+    { key:'b', label:'⭐⭐ Medium Priority', cls:'tier-b' },
+    { key:'c', label:'⭐ Low Priority', cls:'tier-c' },
   ];
   const PC_PLATFORMS = [
     { key:'instagram', icon:'📷', label:'Instagram' },
@@ -5233,12 +5257,167 @@
     }, true);
   }
 
+  // ===== Finance Chart (Stripe-style) =====
+  let _finChartRange = '6m';
+
+  function getPastPeriodKeys(count) {
+    const cur = currentPeriodKey();
+    const [cy, cm] = cur.split('-').map(Number);
+    const keys = [];
+    for (let i = count - 1; i >= 0; i--) {
+      let m = cm - i, y = cy;
+      while (m < 1) { m += 12; y--; }
+      keys.push(`${y}-${String(m).padStart(2,'0')}`);
+    }
+    return keys;
+  }
+
+  function renderFinChart() {
+    const container = document.getElementById('finChartContainer');
+    if (!container) return;
+    if (foodOnlyMode() || pmOnlyMode()) { container.innerHTML = ''; return; }
+
+    const rangeMap = { '3m': 3, '6m': 6, '1y': 12 };
+    const count = rangeMap[_finChartRange] || 6;
+    const keys = getPastPeriodKeys(count);
+
+    const points = keys.map(pk => {
+      const rev = periodRevenue(pk);
+      const takaRaw = Number((data.takaRevenue||{})[pk]) || 0;
+      const r = monthRate(pk);
+      const takaUSD = r ? Math.round((takaRaw / r) * 100) / 100 : 0;
+      const totalRev = rev + takaUSD;
+      const exp = periodExpenses(pk);
+      const profitOv = (data.profitOverride||{})[pk];
+      const profit = (profitOv != null && profitOv !== '') ? Number(profitOv) : (totalRev - exp);
+      return { pk, rev: totalRev, profit };
+    });
+
+    const totalRev = points.reduce((s,p) => s + p.rev, 0);
+    const totalProfit = points.reduce((s,p) => s + p.profit, 0);
+    const maxVal = Math.max(...points.map(p => Math.max(p.rev, Math.abs(p.profit))), 1);
+
+    const W = 700, H = 180, padL = 0, padR = 0, padT = 10, padB = 4;
+    const chartW = W - padL - padR;
+    const chartH = H - padT - padB;
+    const step = points.length > 1 ? chartW / (points.length - 1) : chartW;
+
+    const toY = (v) => padT + chartH - (v / maxVal) * chartH;
+    const toX = (i) => padL + i * step;
+
+    const makePath = (dataKey) => {
+      return points.map((p, i) => `${i===0?'M':'L'}${toX(i).toFixed(1)},${toY(p[dataKey]).toFixed(1)}`).join(' ');
+    };
+    const makeArea = (dataKey) => {
+      const base = toY(0);
+      const top = makePath(dataKey);
+      return `${top} L${toX(points.length-1).toFixed(1)},${base} L${toX(0).toFixed(1)},${base} Z`;
+    };
+
+    const revPath = makePath('rev');
+    const revArea = makeArea('rev');
+    const profitPath = makePath('profit');
+    const profitArea = makeArea('profit');
+
+    const gridLines = 4;
+    let gridSvg = '';
+    for (let i = 0; i <= gridLines; i++) {
+      const y = padT + (chartH / gridLines) * i;
+      gridSvg += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(28,56,43,0.3)" stroke-width="1"/>`;
+    }
+
+    const hoverRects = points.map((p, i) => {
+      const x = Math.max(0, toX(i) - step/2);
+      const w = i === 0 || i === points.length-1 ? step/2 + 10 : step;
+      return `<rect x="${x}" y="0" width="${w}" height="${H}" fill="transparent"
+        onmouseenter="showFinChartTip(event,${i})" onmouseleave="hideFinChartTip()" style="cursor:crosshair"/>`;
+    }).join('');
+
+    const monthLabels = points.map((p, i) => {
+      const [y, m] = p.pk.split('-').map(Number);
+      const label = MONTH_NAMES[m-1].slice(0,3) + (count > 6 ? ' '+String(y).slice(2) : '');
+      return `<span>${label}</span>`;
+    });
+    const showEvery = count > 8 ? 2 : 1;
+    const filteredLabels = monthLabels.map((l, i) => i % showEvery === 0 || i === monthLabels.length-1 ? l : '<span></span>');
+
+    const rangeButtons = ['3m','6m','1y'].map(r =>
+      `<button class="${_finChartRange===r?'active':''}" onclick="_finChartRange='${r}';renderFinChart()">${r.toUpperCase()}</button>`
+    ).join('');
+
+    container.innerHTML = `
+      <div class="fin-chart-wrap">
+        <div class="fin-chart-head">
+          <div class="fin-chart-totals">
+            <div class="fin-chart-metric">
+              <div class="metric-label"><span class="metric-dot" style="background:#7CF2C0"></span>Revenue</div>
+              <div class="metric-val" style="color:#7CF2C0">$${fmtMoney(totalRev)}</div>
+            </div>
+            <div class="fin-chart-metric">
+              <div class="metric-label"><span class="metric-dot" style="background:#4a9eff"></span>Net Profit</div>
+              <div class="metric-val" style="color:${totalProfit>=0?'#4a9eff':'var(--red)'}">$${fmtMoney(totalProfit)}</div>
+            </div>
+          </div>
+          <div class="fin-chart-range">${rangeButtons}</div>
+        </div>
+        <div style="position:relative">
+          <svg class="fin-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+            ${gridSvg}
+            <defs>
+              <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#7CF2C0" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#7CF2C0" stop-opacity="0.02"/>
+              </linearGradient>
+              <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#4a9eff" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="#4a9eff" stop-opacity="0.01"/>
+              </linearGradient>
+            </defs>
+            <path d="${revArea}" fill="url(#revGrad)"/>
+            <path d="${revPath}" fill="none" stroke="#7CF2C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="${profitArea}" fill="url(#profitGrad)"/>
+            <path d="${profitPath}" fill="none" stroke="#4a9eff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            ${points.map((p,i) => `<circle cx="${toX(i)}" cy="${toY(p.rev)}" r="3" fill="#0d1f18" stroke="#7CF2C0" stroke-width="1.5" opacity="0"/>`).join('')}
+            ${hoverRects}
+          </svg>
+          <div id="finChartTip" class="fin-chart-tooltip" style="display:none"></div>
+        </div>
+        <div class="fin-chart-labels">${filteredLabels.join('')}</div>
+      </div>`;
+
+    window._finChartPoints = points;
+  }
+
+  function showFinChartTip(e, idx) {
+    const tip = document.getElementById('finChartTip');
+    if (!tip || !window._finChartPoints) return;
+    const p = window._finChartPoints[idx];
+    const label = periodKeyToLabel(p.pk);
+    tip.innerHTML = `<div class="tt-period">${label}</div>
+      <div class="tt-rev">Revenue: $${fmtMoney(p.rev)}</div>
+      <div class="tt-profit">Profit: $${fmtMoney(p.profit)}</div>`;
+    tip.style.display = 'block';
+    const wrap = tip.parentElement;
+    const rect = wrap.getBoundingClientRect();
+    const tipW = tip.offsetWidth;
+    let left = e.clientX - rect.left + 12;
+    if (left + tipW > rect.width) left = left - tipW - 24;
+    tip.style.left = Math.max(0, left) + 'px';
+    tip.style.top = '10px';
+  }
+  function hideFinChartTip() {
+    const tip = document.getElementById('finChartTip');
+    if (tip) tip.style.display = 'none';
+  }
+
   function renderFinance() {
     const pk = activePeriodKey();
     document.getElementById('financePeriodLabel').textContent = 'Period: ' + periodLabel();
 
     // Food-only admin AND project manager: show ONLY the food expenses sheet
     if (foodOnlyMode() || pmOnlyMode()) { renderFoodOnly(pk); return; }
+
+    renderFinChart();
 
     const rate = monthRate(pk);
     const usdRevenue = periodRevenue(pk); // net of Fiverr's 20%
@@ -5255,7 +5434,7 @@
     const split = data.split || { Rashid:77, Fahim:18, Siam:5 };
     const splitTotal = Object.values(split).reduce((s,v) => s + (Number(v)||0), 0);
 
-    const order = ['Rashid','Fahim','Siam'];
+    const order = ['Rashid','Fahim'];
     const splitNames = [...order.filter(n => n in split), ...Object.keys(split).filter(n => !order.includes(n))];
 
     let html = '';
@@ -5331,6 +5510,7 @@
                 <div class="split-profit-amt">$${fmtMoney(profitCut)}</div>
                 <div class="split-taka">৳ ${taka(profitCut, rate).toLocaleString()}</div>
               </span>
+              <button onclick="removeSplitPerson('${escapeAttr(name)}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;opacity:0.4;padding:2px 4px" title="Remove">×</button>
             </div>`;
         }).join('')}
         ${splitTotal !== 100 ? `<div class="split-warn">⚠ Percentages total ${splitTotal}% (should be 100%)</div>` : ''}
@@ -5577,6 +5757,16 @@
   async function updateSplit(name, val) {
     data.split[name] = Number(val) || 0;
     renderFinance(); await saveData();
+  }
+
+  async function removeSplitPerson(name) {
+    if (!data.split || !(name in data.split)) return;
+    showConfirm(`Remove ${name} from split?`, 'Their percentage will be removed. You can re-add them in Settings.', 'Remove', async () => {
+      pushUndo();
+      delete data.split[name];
+      renderFinance(); await saveData();
+      showToast(`${name} removed from split`);
+    }, true);
   }
 
   async function addExpense(type) {
@@ -5946,7 +6136,7 @@
     const expenses = periodExpenses(pk);
     const profit = revenue - expenses;
     const split = data.split || {};
-    const order = ['Rashid','Fahim','Siam'];
+    const order = ['Rashid','Fahim'];
     const splitNames = [...order.filter(n => n in split), ...Object.keys(split).filter(n => !order.includes(n))];
     const prows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk);
     const expList = data.expenses[pk] || [];
