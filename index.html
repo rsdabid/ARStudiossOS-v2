@@ -1256,8 +1256,7 @@
     { id:'points', label:'Points', type:'points', adminOnly:false, locked:true, editorEditable:false },
     { id:'status', label:'Status', type:'status', adminOnly:false, locked:true, editorEditable:true },
     { id:'deadline', label:'Deadline', type:'date', adminOnly:false, locked:true, editorEditable:false },
-    { id:'frameio', label:'Frame.io', type:'links', adminOnly:false, locked:true, editorEditable:true },
-    { id:'finalVideo', label:'Final Video', type:'links', adminOnly:false, locked:true, editorEditable:true },
+    { id:'finalVideo', label:'Video Link', type:'links', adminOnly:false, locked:true, editorEditable:true },
     { id:'notes', label:'Notes', type:'text', adminOnly:false, locked:true, editorEditable:true }
   ];
   const DEFAULT_DATA = {
@@ -3218,14 +3217,14 @@
               }
             }
             if (!projectName) projectName = `Untitled (${r.status || 'Assigned'})`;
-            // Final video link (clickable) — but only show as a small icon, no full URL
+            // Video link (clickable) — but only show as a small icon, no full URL
             let finalLink = '';
             if (r.finalVideo) {
               const first = parseLinks(r.finalVideo)[0];
               if (first) {
                 const parsed = parseNamedLink(first);
                 const url = parsed ? parsed.url : first;
-                if (url) finalLink = ` <a href="${escapeAttr(linkify(url))}" target="_blank" title="Final video" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none">🎬</a>`;
+                if (url) finalLink = ` <a href="${escapeAttr(linkify(url))}" target="_blank" title="Video link" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none">🎬</a>`;
               }
             }
             const pts = r.points!=null ? Number(r.points) : pointsFromRevenue(r.revenue);
@@ -4527,13 +4526,12 @@
   function isDone(r) { return r && r.status === 'Done'; }
 
   // ============ CLIENT CRM ============
-  // Columns visible to clients (no editor, no revenue, no points, no frameio)
+  // Columns visible to clients (no editor, no revenue, no points)
   const CLIENT_COLUMNS = [
     { id:'rawFile', label:'Raw Footage', type:'links', editable:true, locked:true },
     { id:'deadline', label:'Deadline', type:'date', editable:true, locked:true },
     { id:'status', label:'Status', type:'status', editable:false, locked:true },
-    { id:'frameio', label:'Frame.io', type:'links', editable:false, locked:true },
-    { id:'finalVideo', label:'Final Video', type:'links', editable:false, locked:true },
+    { id:'finalVideo', label:'Video Link', type:'links', editable:false, locked:true },
     { id:'notes', label:'Notes', type:'text', editable:true, locked:true }
   ];
 
@@ -4557,7 +4555,7 @@
     </div>`;
 
     const search = (document.getElementById('clientSearch') || {}).value || '';
-    // Use admin's master columns (Raw Footage, Editor, Revenue, Points, Status, Deadline, Frame.io, Final Video, Notes)
+    // Use admin's master columns (Raw Footage, Editor, Revenue, Points, Status, Deadline, Video Link, Notes)
     const cols = data.columns.filter(c => !c.adminOnly || isAdmin());
 
     clientList.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase())).forEach(client => {
