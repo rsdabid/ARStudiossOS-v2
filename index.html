@@ -594,6 +594,7 @@
   .status-assigned { background: rgba(74,158,255,0.15); color: var(--blue); }
   .status-progress { background: rgba(255,181,71,0.15); color: var(--amber); }
   .status-qc { background: rgba(180,140,255,0.15); color: var(--purple); }
+  .status-review { background: rgba(0,188,212,0.15); color: #00bcd4; }
   .status-revision { background: rgba(255,82,82,0.15); color: var(--red); }
   .status-done { background: rgba(94,231,176,0.15); color: var(--green); }
   .editor-cell { padding: 12px 14px; cursor: pointer; }
@@ -1094,6 +1095,7 @@
           <option value="Assigned">Assigned</option>
           <option value="In Progress">In Progress</option>
           <option value="In QC">In QC</option>
+          <option value="Client Review">Client Review</option>
           <option value="Need Revision">Need Revision</option>
           <option value="Done">Done</option>
         </select>
@@ -1245,6 +1247,7 @@
     { value:'Assigned', cls:'status-assigned' },
     { value:'In Progress', cls:'status-progress' },
     { value:'In QC', cls:'status-qc' },
+    { value:'Client Review', cls:'status-review' },
     { value:'Need Revision', cls:'status-revision' },
     { value:'Done', cls:'status-done' }
   ];
@@ -3219,7 +3222,7 @@
             if (!projectName) projectName = `Untitled (${r.status || 'Assigned'})`;
             // Video link (clickable) — but only show as a small icon, no full URL
             let finalLink = '';
-            if (r.finalVideo) {
+            if (r.finalVideo && clientCanSeeVideo(r)) {
               const first = parseLinks(r.finalVideo)[0];
               if (first) {
                 const parsed = parseNamedLink(first);
@@ -3504,10 +3507,16 @@
     showToast(`Row pasted under ${targetEditor || 'Unassigned'}`);
   }
 
+  const CLIENT_VISIBLE_STATUSES = ['Client Review', 'Need Revision', 'Done'];
+  function clientCanSeeVideo(row) { return !isClient() || CLIENT_VISIBLE_STATUSES.includes(row.status); }
+
   // Permission: can the current user edit this column?
-  function canEdit(c) {
+  function canEdit(c, row) {
     if (isAdmin()) return true;
-    if (isClient()) return !!c.editable; // CLIENT_COLUMNS have editable flag
+    if (isClient()) {
+      if (c.type === 'status' && row && CLIENT_VISIBLE_STATUSES.includes(row.status)) return true;
+      return !!c.editable;
+    }
     return !!c.editorEditable; // editors
   }
 
@@ -3552,7 +3561,10 @@
 
   function renderCell(r, c) {
     const val = r[c.id];
-    const editable = canEdit(c);
+    const editable = canEdit(c, r);
+    if (c.id === 'finalVideo' && !clientCanSeeVideo(r)) {
+      return `<td><div class="cell" style="cursor:default"><span class="cell-empty" style="opacity:0.4">Available after review</span></div></td>`;
+    }
     if (c.type === 'editor') {
       const inner = val ? `<span class="editor-pill"><span class="editor-avatar">${escapeHtml((val[0]||'?').toUpperCase())}</span>${escapeHtml(val)}</span>` : `<span class="cell-empty">Assign editor</span>`;
       const click = editable ? `onclick="openEditorDropdown(event,'${r.id}')"` : '';
@@ -4131,10 +4143,23 @@
   function openStatusDropdown(e, rowId) {
     e.stopPropagation(); closeMenus();
     const menu = document.createElement('div'); menu.className = 'dropdown-menu';
-    menu.innerHTML = STATUS_OPTIONS.filter(o => isAdmin() || o.value !== 'Done').map(o => `<div class="dropdown-item" onclick="setStatus('${rowId}','${o.value}')"><span class="status-pill ${o.cls}">${o.value}</span></div>`).join('');
+    let opts;
+    if (isClient()) {
+      opts = STATUS_OPTIONS.filter(o => o.value === 'Need Revision' || o.value === 'Done');
+    } else {
+      opts = STATUS_OPTIONS.filter(o => isAdmin() || o.value !== 'Done');
+    }
+    menu.innerHTML = opts.map(o => `<div class="dropdown-item" onclick="setStatus('${rowId}','${o.value}')"><span class="status-pill ${o.cls}">${o.value}</span></div>`).join('');
     document.body.appendChild(menu); positionMenu(menu, e); openMenu = menu;
   }
-  async function setStatus(rowId, val) { const r = data.rows.find(x => x.id === rowId); if (!r) return; if (val === 'Done' && !isAdmin()) { showToast('Only admin can mark tasks as Done'); return; } pushUndo(); r.status = val; closeMenus(); renderActiveCRM(); await saveData(); }
+  async function setStatus(rowId, val) {
+    const r = data.rows.find(x => x.id === rowId); if (!r) return;
+    if (isClient()) {
+      if (!CLIENT_VISIBLE_STATUSES.includes(r.status)) { showToast('Cannot change status'); return; }
+      if (val !== 'Need Revision' && val !== 'Done') { showToast('Invalid status'); return; }
+    } else if (val === 'Done' && !isAdmin()) { showToast('Only admin can mark tasks as Done'); return; }
+    pushUndo(); r.status = val; closeMenus(); renderActiveCRM(); await saveData();
+  }
 
   let calState = { rowId:null, colId:null, viewYear:0, viewMonth:0 };
   function openCalendar(e, rowId, colId) {
