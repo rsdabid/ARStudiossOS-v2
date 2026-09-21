@@ -2217,6 +2217,7 @@
       document.getElementById('userBadge').textContent = '🤝 ' + clientName();
       document.getElementById('financeTab').style.display = 'none';
       document.getElementById('clientsTab').style.display = 'none';
+      if (leadsTab) leadsTab.style.display = 'none';
       if (lbTab) lbTab.style.display = 'none'; // clients can't see leaderboard
       document.getElementById('addColBtn').style.display = 'inline-block';
       if (arb) { arb.style.display = 'flex'; }
