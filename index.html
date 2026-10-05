@@ -2075,8 +2075,8 @@
         session = { role:'admin', foodOnly:true }; saveSession(); showApp();
       } else if (pw === 'leads') {
         session = { role:'admin', leadsOnly:true }; saveSession(); showApp();
-      } else if (pw === '10cr') {
-        session = { role:'admin', pmOnly:true }; saveSession(); showApp();
+      } else if (pw === 'admin1') {
+        session = { role:'admin' }; saveSession(); showApp();
       } else if (pw === data.adminPass) {
         session = { role:'admin' }; saveSession(); showApp();
       } else { err.classList.add('show'); }
