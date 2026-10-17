@@ -2414,7 +2414,8 @@
   function populateEditorFilter() {
     const sel = document.getElementById('crmFilterEditor'); if (!sel) return;
     const cur = sel.value;
-    sel.innerHTML = '<option value="">All editors</option>' + allEditors().map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('');
+    const eds = allEditorsFor(activePeriodKey());
+    sel.innerHTML = '<option value="">All editors</option>' + eds.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('');
     sel.value = cur;
   }
   function periodRows() {
@@ -2814,17 +2815,19 @@
     const rows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.editor);
     const now = new Date();
 
-    // Build per-editor data
+    // Build per-editor data (period-aware so past months show historical roster)
+    const pTeams = teamsFor(pk);
+    const pIndivs = individualsFor(pk);
     const editorOrder = [];
-    (data.teams || []).forEach(t => (t.members||[]).forEach(m => { if(!editorOrder.includes(m)) editorOrder.push(m); }));
-    (data.individuals || []).forEach(m => { if(!editorOrder.includes(m)) editorOrder.push(m); });
+    (pTeams || []).forEach(t => (t.members||[]).forEach(m => { if(!editorOrder.includes(m)) editorOrder.push(m); }));
+    (pIndivs || []).forEach(m => { if(!editorOrder.includes(m)) editorOrder.push(m); });
 
     const teamColorOf = {};
-    (data.teams || []).forEach(t => {
+    (pTeams || []).forEach(t => {
       const c = t.id==='t_siam' ? '#4a9eff' : t.id==='t_riad' ? '#ff9347' : '#5EE7B0';
       (t.members||[]).forEach(m => teamColorOf[m] = c);
     });
-    (data.individuals||[]).forEach(m => teamColorOf[m] = '#8aa3b0');
+    (pIndivs||[]).forEach(m => teamColorOf[m] = '#8aa3b0');
 
     const projName = (r) => {
       if (r.rawFile) {
@@ -3101,7 +3104,7 @@
     }
     const myTeamPts = teamPoints(myTeam);
     // Find the rival team (the other team with the most done points)
-    const otherTeams = (data.teams || []).filter(t => t.id !== myTeam.id);
+    const otherTeams = teamsFor(pk).filter(t => t.id !== myTeam.id);
     let rival = null, rivalPts = { done: 0, pipe: 0 };
     otherTeams.forEach(t => {
       const p = teamPoints(t);
@@ -3312,20 +3315,22 @@
     const filterRow = r => (!fStatus || r.status === fStatus) && (!fEditor || r.editor === fEditor);
 
     // Order: each team's leader first, then members, then individuals, then unassigned bucket
+    const pTeams = teamsFor(pk);
+    const pIndivs = individualsFor(pk);
     const editorOrder = [];
-    (data.teams || []).forEach(t => {
+    (pTeams || []).forEach(t => {
       if (t.leader && !editorOrder.includes(t.leader)) editorOrder.push(t.leader);
       (t.members || []).forEach(m => { if (!editorOrder.includes(m)) editorOrder.push(m); });
     });
-    (data.individuals || []).forEach(m => { if (!editorOrder.includes(m)) editorOrder.push(m); });
+    (pIndivs || []).forEach(m => { if (!editorOrder.includes(m)) editorOrder.push(m); });
 
     // Team color lookup for the avatar accent
     const teamColor = {};
-    (data.teams || []).forEach(t => {
+    (pTeams || []).forEach(t => {
       const color = t.id === 't_siam' ? '#4a9eff' : (t.id === 't_riad' ? '#ff9347' : 'var(--green)');
       (t.members || []).forEach(m => teamColor[m] = color);
     });
-    (data.individuals || []).forEach(m => teamColor[m] = '#8aa3b0');
+    (pIndivs || []).forEach(m => teamColor[m] = '#8aa3b0');
 
     let html = '';
     editorOrder.forEach(name => {
@@ -4531,13 +4536,14 @@
       return s;
     }
 
-    data.teams.forEach(t => {
+    periodTeams.forEach(t => {
       const eds = t.members.map(m => ({ name:m, points:editorPoints[m]||0, leader: m===t.leader })).sort((a,b) => b.points - a.points);
       const c = teamColor[t.id] || { main:'#5EE7B0', soft:'rgba(94,231,176,0.08)', border:'rgba(94,231,176,0.3)' };
       html += renderEditorGroup(t.name, eds, c);
     });
 
-    const indivs = (data.individuals || []).map(m => ({ name:m, points:editorPoints[m]||0, leader:false })).sort((a,b) => b.points - a.points);
+    const pIndivs = individualsFor(pk);
+    const indivs = (pIndivs || []).map(m => ({ name:m, points:editorPoints[m]||0, leader:false })).sort((a,b) => b.points - a.points);
     if (indivs.length) {
       html += renderEditorGroup('Individuals', indivs, indivColor);
     }
@@ -6553,6 +6559,7 @@
     _dragName = null; _dragFrom = null;
 
     pushUndo();
+    await snapshotRosterFor(currentPeriodKey());
     // Remove from source
     if (from === 'individual') {
       data.individuals = (data.individuals||[]).filter(m => m !== name);
@@ -6909,6 +6916,7 @@
     try {
       await loadData(); loadSession(); populateLoginDropdown();
       await rolloverIncomplete();
+      await snapshotPastPeriodsOnce();
       const purged = purgeOldRecycleBin();
       const purgedExp = purgeOldExpenseBin();
       if (purged || purgedExp || _needSplitSave) { await saveData(); _needSplitSave = false; }
