@@ -1011,6 +1011,56 @@
   .leader-star { cursor: pointer; font-size: 14px; color: var(--text-muted); transition: color 0.15s; }
   .leader-star.active { color: var(--gold); }
   .leader-star:hover { color: var(--gold); }
+
+  /* Foggy blur on profit/split amounts */
+  .profit-fog {
+    position: relative;
+    user-select: none;
+    cursor: default;
+  }
+  .profit-fog .fog-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(135deg,
+      rgba(5,20,14,0.7) 0%,
+      rgba(10,30,20,0.5) 30%,
+      rgba(5,20,14,0.65) 60%,
+      rgba(10,30,20,0.55) 100%);
+    backdrop-filter: blur(14px) saturate(0.6);
+    -webkit-backdrop-filter: blur(14px) saturate(0.6);
+    border-radius: 12px;
+    transition: opacity 0.5s ease, backdrop-filter 0.5s ease;
+    animation: fogDrift 6s ease-in-out infinite alternate;
+  }
+  .profit-fog.revealed .fog-overlay {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    pointer-events: none;
+  }
+  @keyframes fogDrift {
+    0% { background-position: 0% 50%; opacity: 0.92; }
+    50% { opacity: 0.85; }
+    100% { background-position: 100% 50%; opacity: 0.95; }
+  }
+  .profit-fog .fog-hint {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    letter-spacing: 0.04em;
+  }
+  .profit-fog:hover .fog-hint { opacity: 1; }
+  .profit-fog.revealed .fog-hint { display: none; }
 </style>
 </head>
 <body>
@@ -1303,7 +1353,8 @@
       { name:'Araf', taka:10000 },
       { name:'Khala', taka:8000 }
     ],
-    monthRates: {}
+    monthRates: {},
+    monthCardRates: {}
   };
   let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
   // Undo/Redo system — snapshots entire data before each mutation
@@ -1476,6 +1527,7 @@
 
       // Period settings → per-period maps
       data.monthRates = {};
+      data.monthCardRates = (s.rates && s.rates.cardRates) ? { ...s.rates.cardRates } : {};
       data.takaRevenue = {};
       data.profitOverride = {};
       data.profitNote = {};
@@ -1605,12 +1657,18 @@
         ops.push(db.from('settings').update(sChanged).eq('id', 'main'));
       }
 
+      // Save card rates into rates object (no schema change needed)
+      if (!data.rates) data.rates = {};
+      data.rates.cardRates = data.monthCardRates || {};
+
       // 2. Period settings
       const allPK = new Set([
-        ...Object.keys(data.monthRates||{}), ...Object.keys(data.takaRevenue||{}),
+        ...Object.keys(data.monthRates||{}),
+        ...Object.keys(data.takaRevenue||{}),
         ...Object.keys(data.profitOverride||{}), ...Object.keys(data.profitNote||{}),
         ...Object.keys(data.notes||{}),
-        ...Object.keys(_lastSaved.monthRates||{}), ...Object.keys(_lastSaved.takaRevenue||{}),
+        ...Object.keys(_lastSaved.monthRates||{}),
+        ...Object.keys(_lastSaved.takaRevenue||{}),
         ...Object.keys(_lastSaved.profitOverride||{}), ...Object.keys(_lastSaved.profitNote||{}),
         ...Object.keys(_lastSaved.notes||{}),
       ]);
@@ -1894,6 +1952,7 @@
         for (const [dbK, jsK] of Object.entries(m)) {
           if (nw[dbK] !== undefined && JSON.stringify(data[jsK]) !== JSON.stringify(nw[dbK])) { data[jsK] = nw[dbK]; changed = true; }
         }
+        if (changed && data.rates && data.rates.cardRates) data.monthCardRates = { ...data.rates.cardRates };
       }
       break;
     }
@@ -1901,6 +1960,7 @@
       if ((eventType === 'INSERT' || eventType === 'UPDATE') && nw) {
         const pk = nw.period;
         if (!data.monthRates) data.monthRates = {};
+        if (!data.monthCardRates) data.monthCardRates = {};
         if (!data.takaRevenue) data.takaRevenue = {};
         if (!data.profitOverride) data.profitOverride = {};
         if (!data.profitNote) data.profitNote = {};
@@ -4687,10 +4747,50 @@
     pk = pk || activePeriodKey();
     if (!data.monthRates) data.monthRates = {};
     if (data.monthRates[pk] == null) {
-      // seed from legacy global rate or default 122
-      data.monthRates[pk] = Number((data.rates||{}).expense) || 122;
+      data.monthRates[pk] = Number((data.rates||{}).expense) || 125;
     }
     return Number(data.monthRates[pk]) || 0;
+  }
+  function monthCardRate(pk) {
+    pk = pk || activePeriodKey();
+    if (!data.monthCardRates) data.monthCardRates = {};
+    const v = data.monthCardRates[pk];
+    if (v != null) return Number(v) || 0;
+    return monthRate(pk);
+  }
+  function isFiverDeduction(e) {
+    const n = (e.name||'').toLowerCase();
+    return n.includes('fiverr') || n.includes('fiver');
+  }
+  function isCardExpense(e) {
+    return (e.name||'').toLowerCase().includes('card');
+  }
+  function periodFinancials(pk) {
+    pk = pk || activePeriodKey();
+    const sr = monthRate(pk);
+    const cr = monthCardRate(pk);
+    const grossUSD = periodRevenue(pk);
+    const list = data.expenses[pk] || [];
+    const takaRevRaw = Number((data.takaRevenue||{})[pk]) || 0;
+    let fiverUSD = 0, cardUSD = 0, takaExp = 0;
+    list.forEach(e => {
+      const tk = (Number(e.taka)||0) + (Number(e.bonus)||0);
+      const usd = e.usd != null ? (Number(e.usd)||0) : null;
+      if (isFiverDeduction(e)) {
+        fiverUSD += usd != null ? usd : (tk && sr ? Math.round((tk/sr)*100)/100 : 0);
+      } else if (isCardExpense(e)) {
+        cardUSD += usd != null ? usd : (tk && cr ? Math.round((tk/cr)*100)/100 : 0);
+      } else {
+        takaExp += tk;
+      }
+    });
+    const netUSD = grossUSD - fiverUSD;
+    const revTaka = Math.round(netUSD * sr) + takaRevRaw;
+    const cardTaka = Math.round(cardUSD * cr);
+    const totalExpTaka = takaExp + cardTaka;
+    const profitTaka = revTaka - totalExpTaka;
+    return { grossUSD, fiverUSD, netUSD, sellRate:sr, cardRate:cr,
+             revTaka, takaExp, cardUSD, cardTaka, totalExpTaka, profitTaka };
   }
   function taka(usd, rate) { return Math.round((Number(usd)||0) * (Number(rate)||0)); }
   function fmtMoney(n) {
@@ -5354,14 +5454,14 @@
     const keys = getPastPeriodKeys(count);
 
     const points = keys.map(pk => {
-      const rev = periodRevenue(pk);
+      const fin = periodFinancials(pk);
       const takaRaw = Number((data.takaRevenue||{})[pk]) || 0;
-      const r = monthRate(pk);
+      const r = fin.sellRate;
       const takaUSD = r ? Math.round((takaRaw / r) * 100) / 100 : 0;
-      const totalRev = rev + takaUSD;
-      const exp = periodExpenses(pk);
+      const totalRev = fin.grossUSD + takaUSD;
       const profitOv = (data.profitOverride||{})[pk];
-      const profit = (profitOv != null && profitOv !== '') ? Number(profitOv) : (totalRev - exp);
+      const profitTk = (profitOv != null && profitOv !== '') ? Number(profitOv) : fin.profitTaka;
+      const profit = r ? Math.round((profitTk / r) * 100) / 100 : 0;
       const pList = data.expenses[pk] || [];
       const rr = monthRate(pk);
       const bySalary = pList.filter(e=>e.type==='salary').reduce((s,e)=>s+expenseUSD(e,rr),0);
@@ -5556,16 +5656,17 @@
     renderFinChart();
 
     const rate = monthRate(pk);
-    const usdRevenue = periodRevenue(pk); // net of Fiverr's 20%
-    // Taka revenue (clients paying in ৳), converted to USD at month rate
+    const cardRate = monthCardRate(pk);
+    const fin = periodFinancials(pk);
+    const usdRevenue = fin.grossUSD;
     const takaRevenueRaw = Number((data.takaRevenue||{})[pk]) || 0;
     const takaRevenueUSD = rate ? Math.round((takaRevenueRaw / rate) * 100) / 100 : 0;
     const revenue = usdRevenue + takaRevenueUSD;
     const expenses = periodExpenses(pk);
-    const autoProfit = revenue - expenses;
-    // Profit can be manually overridden; stored per period
+    const autoProfitTaka = fin.profitTaka;
     const profitOverride = (data.profitOverride||{})[pk];
-    const profit = (profitOverride != null && profitOverride !== '') ? Number(profitOverride) : autoProfit;
+    const profitTaka = (profitOverride != null && profitOverride !== '') ? Number(profitOverride) : autoProfitTaka;
+    const profitUSDEquiv = rate ? Math.round((profitTaka / rate) * 100) / 100 : 0;
     const profitNote = (data.profitNote||{})[pk] || '';
     const split = data.split || { Rashid:77, Fahim:18, Siam:5 };
     const splitTotal = Object.values(split).reduce((s,v) => s + (Number(v)||0), 0);
@@ -5575,18 +5676,25 @@
 
     let html = '';
 
-    // ONE exchange rate for the whole month, at the very top
+    // Two exchange rates for the month
     html += `
       <div class="fin-card" style="margin-bottom:16px">
-        <div class="rate-bar">
-          <div>
-            <div class="notes-label" style="color:var(--green)">Exchange Rate — ${escapeHtml(periodKeyToLabel(pk))}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Applies to all conversions this month</div>
+        <div class="rate-bar" style="flex-wrap:wrap;gap:12px">
+          <div style="flex:1;min-width:200px">
+            <div class="notes-label" style="color:var(--green)">Exchange Rates — ${escapeHtml(periodKeyToLabel(pk))}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Selling rate for revenue & local expenses · Card rate for online purchases</div>
           </div>
-          <div class="rate-bar-input">
-            <span class="rate-eq">1 USD =</span>
-            <input type="number" class="rate-input" style="width:90px;font-size:15px" value="${rate}" onchange="updateMonthRate(this.value)">
-            <span class="rate-label" style="font-size:14px">৳</span>
+          <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+            <div class="rate-bar-input">
+              <span class="rate-eq" style="font-size:11px">Selling</span>
+              <input type="number" class="rate-input" style="width:76px;font-size:15px" value="${rate}" onchange="updateMonthRate(this.value)">
+              <span class="rate-label" style="font-size:14px">৳</span>
+            </div>
+            <div class="rate-bar-input">
+              <span class="rate-eq" style="font-size:11px">Card</span>
+              <input type="number" class="rate-input" style="width:76px;font-size:15px" value="${cardRate}" onchange="updateMonthCardRate(this.value)">
+              <span class="rate-label" style="font-size:14px">৳</span>
+            </div>
           </div>
         </div>
       </div>`;
@@ -5597,7 +5705,7 @@
         <div class="rate-bar">
           <div>
             <div class="notes-label" style="color:var(--green)">Revenue Received in Taka (৳)</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">For clients who pay in ৳ · converts to $${takaRevenueUSD.toLocaleString()} at this month's rate</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">For clients who pay in ৳ · converts to $${takaRevenueUSD.toLocaleString()} at selling rate</div>
           </div>
           <div class="rate-bar-input">
             <span class="rate-label" style="font-size:14px">৳</span>
@@ -5608,48 +5716,60 @@
 
     html += '<div class="fin-grid">';
 
-    // Monthly summary
+    // Monthly summary — three-tier breakdown
     html += `
       <div class="fin-card">
         <h3>Monthly Summary</h3>
         <div class="fin-stat"><span class="label">USD Revenue <span style="font-size:10px;color:var(--text-muted);opacity:0.7">(net of Fiverr 20%)</span></span><span class="val rev">$${fmtMoney(usdRevenue)}</span></div>
-        ${takaRevenueUSD > 0 ? `<div class="fin-stat"><span class="label">Taka Revenue <span style="font-size:10px;color:var(--text-muted);opacity:0.7">(৳${takaRevenueRaw.toLocaleString()})</span></span><span class="val rev">+ $${fmtMoney(takaRevenueUSD)}</span></div>` : ''}
-        <div class="fin-stat" style="border-top:1px dashed var(--border);padding-top:10px;margin-top:6px"><span class="label" style="font-weight:700;color:var(--text)">Total Revenue</span><span class="val rev" style="font-weight:700">$${fmtMoney(revenue)}</span></div>
-        <div class="fin-stat"><span class="label">Total Expenses</span><span class="val neg">- $${fmtMoney(expenses)}</span></div>
-        <div class="fin-big">
-          <div style="display:flex;align-items:center;justify-content:center;gap:6px">
-            <span style="color:var(--text-muted);font-size:22px;font-weight:700;font-family:var(--font-display)">$</span>
-            <input type="number" step="any" id="profitInput" value="${Math.round(profit*100)/100}" onchange="updateProfitOverride(this.value)"
-              style="width:auto;min-width:120px;max-width:230px;text-align:center;font-size:32px;font-weight:800;background:transparent;border:none;border-bottom:1px dashed var(--border);color:${profit>=0?'var(--green-bright)':'var(--red)'};font-family:var(--font-display)">
+        ${fin.fiverUSD > 0 ? `<div class="fin-stat"><span class="label">Fiverr/Platform Deductions</span><span class="val neg">- $${fmtMoney(fin.fiverUSD)}</span></div>` : ''}
+        ${fin.fiverUSD > 0 ? `<div class="fin-stat"><span class="label">Net USD</span><span class="val rev">$${fmtMoney(fin.netUSD)}</span></div>` : ''}
+        ${takaRevenueRaw > 0 ? `<div class="fin-stat"><span class="label">+ Taka Revenue</span><span class="val rev">৳ ${takaRevenueRaw.toLocaleString()}</span></div>` : ''}
+        <div class="fin-stat" style="border-top:1px dashed var(--border);padding-top:10px;margin-top:6px"><span class="label" style="font-weight:700;color:var(--text)">Revenue in Taka <span style="font-size:10px;color:var(--text-muted);opacity:0.7;font-weight:400">(at ${rate}৳)</span></span><span class="val rev" style="font-weight:700">৳ ${fin.revTaka.toLocaleString()}</span></div>
+        <div class="fin-stat"><span class="label">Local Expenses <span style="font-size:10px;color:var(--text-muted);opacity:0.7">(salaries, food, office)</span></span><span class="val neg">- ৳ ${fin.takaExp.toLocaleString()}</span></div>
+        ${fin.cardUSD > 0 ? `<div class="fin-stat"><span class="label">Card Expenses <span style="font-size:10px;color:var(--text-muted);opacity:0.7">($${fmtMoney(fin.cardUSD)} × ${cardRate}৳)</span></span><span class="val neg">- ৳ ${fin.cardTaka.toLocaleString()}</span></div>` : ''}
+        <div class="profit-fog" id="profitFog" onclick="handleProfitFogClick(event)">
+          <div class="fog-overlay"></div>
+          <div class="fog-hint">triple-click to reveal</div>
+          <div class="fin-big">
+            <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+              <span style="color:var(--text-muted);font-size:22px;font-weight:700;font-family:var(--font-display)">৳</span>
+              <input type="number" step="any" id="profitInput" value="${Math.round(profitTaka)}" onchange="updateProfitOverride(this.value)"
+                style="width:auto;min-width:140px;max-width:260px;text-align:center;font-size:32px;font-weight:800;background:transparent;border:none;border-bottom:1px dashed var(--border);color:${profitTaka>=0?'var(--green-bright)':'var(--red)'};font-family:var(--font-display)">
+            </div>
+            <div class="cap">Net Profit ${profitOverride!=null&&profitOverride!==''?'<span style="color:var(--amber);font-size:10px">· manual</span>':''}</div>
+            <div style="margin-top:8px;color:var(--text-dim);font-size:14px;font-weight:700">~$${fmtMoney(profitUSDEquiv)}</div>
+            ${profitOverride!=null&&profitOverride!==''?`<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Auto: ৳${Math.round(autoProfitTaka).toLocaleString()} · <a href="#" onclick="clearProfitOverride();return false" style="color:var(--green)">reset</a></div>`:''}
+            <input type="text" id="profitNoteInput" value="${escapeAttr(profitNote)}" placeholder="Add a note about this profit..." onchange="updateProfitNote(this.value)"
+              style="width:100%;margin-top:12px;padding:8px 10px;font-size:12px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui)">
           </div>
-          <div class="cap">Net Profit ${profitOverride!=null&&profitOverride!==''?'<span style="color:var(--amber);font-size:10px">· manual</span>':''}</div>
-          <div style="margin-top:8px;color:var(--text-dim);font-size:14px;font-weight:700">৳ ${taka(profit, rate).toLocaleString()}</div>
-          ${profitOverride!=null&&profitOverride!==''?`<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Auto: $${(Math.round(autoProfit*100)/100).toLocaleString()} · <a href="#" onclick="clearProfitOverride();return false" style="color:var(--green)">reset</a></div>`:''}
-          <input type="text" id="profitNoteInput" value="${escapeAttr(profitNote)}" placeholder="Add a note about this profit..." onchange="updateProfitNote(this.value)"
-            style="width:100%;margin-top:12px;padding:8px 10px;font-size:12px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui)">
         </div>
       </div>`;
 
-    // Profit split
+    // Profit split — taka-based, also fogged
     html += `
       <div class="fin-card">
         <h3>Profit Split (after expenses)</h3>
-        ${splitNames.map(name => {
-          const pct = Number(split[name])||0;
-          const profitCut = Math.round(profit * pct / 100);
-          return `
-            <div class="split-row">
-              <span class="split-name">${escapeHtml(name)}</span>
-              <input type="number" class="split-pct-input" value="${pct}" min="0" max="100" onchange="updateSplit('${escapeAttr(name)}',this.value)">
-              <span style="color:var(--text-muted);font-size:12px">%</span>
-              <span class="split-amounts">
-                <div class="split-profit-amt">$${fmtMoney(profitCut)}</div>
-                <div class="split-taka">৳ ${taka(profitCut, rate).toLocaleString()}</div>
-              </span>
-              <button onclick="removeSplitPerson('${escapeAttr(name)}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;opacity:0.4;padding:2px 4px" title="Remove">×</button>
-            </div>`;
-        }).join('')}
-        ${splitTotal !== 100 ? `<div class="split-warn">⚠ Percentages total ${splitTotal}% (should be 100%)</div>` : ''}
+        <div class="profit-fog" id="splitFog" onclick="handleProfitFogClick(event)">
+          <div class="fog-overlay"></div>
+          <div class="fog-hint">triple-click to reveal</div>
+          ${splitNames.map(name => {
+            const pct = Number(split[name])||0;
+            const profitCut = Math.round(profitTaka * pct / 100);
+            const cutUSD = rate ? Math.round((profitCut / rate) * 100) / 100 : 0;
+            return `
+              <div class="split-row">
+                <span class="split-name">${escapeHtml(name)}</span>
+                <input type="number" class="split-pct-input" value="${pct}" min="0" max="100" onchange="updateSplit('${escapeAttr(name)}',this.value)">
+                <span style="color:var(--text-muted);font-size:12px">%</span>
+                <span class="split-amounts">
+                  <div class="split-profit-amt" style="font-size:15px">৳ ${profitCut.toLocaleString()}</div>
+                  <div class="split-taka" style="font-size:11px;color:var(--text-muted)">~$${fmtMoney(cutUSD)}</div>
+                </span>
+                <button onclick="removeSplitPerson('${escapeAttr(name)}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;opacity:0.4;padding:2px 4px" title="Remove">×</button>
+              </div>`;
+          }).join('')}
+          ${splitTotal !== 100 ? `<div class="split-warn">⚠ Percentages total ${splitTotal}% (should be 100%)</div>` : ''}
+        </div>
       </div>`;
 
     html += '</div>';
@@ -5666,8 +5786,10 @@
       : rows.map(e => {
           const usd = expenseUSD(e, rate);
           const tk = e.taka != null ? e.taka : Math.round(usd * rate);
+          const badge = isFiverDeduction(e) ? '<span style="display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(239,68,68,0.15);color:#f87171;margin-left:5px;vertical-align:middle">FIVERR</span>'
+            : isCardExpense(e) ? '<span style="display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(59,130,246,0.15);color:#60a5fa;margin-left:5px;vertical-align:middle">CARD</span>' : '';
           return `<tr>
-            <td><div class="exp-cell ${e.name?'':'empty'}" onclick="editExpense(event,'${e.id}','name')">${e.name?escapeHtml(e.name):'Name'}</div>${e.createdAt?`<div style="font-size:9px;color:var(--text-muted);opacity:0.6;padding:0 8px">${fmtTS(e.createdAt)}</div>`:''}</td>
+            <td><div class="exp-cell ${e.name?'':'empty'}" onclick="editExpense(event,'${e.id}','name')">${e.name?escapeHtml(e.name):'Name'}${badge}</div>${e.createdAt?`<div style="font-size:9px;color:var(--text-muted);opacity:0.6;padding:0 8px">${fmtTS(e.createdAt)}</div>`:''}</td>
             <td><div class="exp-cell ${e.taka?'':'empty'}" onclick="editExpense(event,'${e.id}','taka')">${tk?`<span style="color:var(--green-bright)">৳ ${Number(tk).toLocaleString()}</span>`:'৳ 0'}</div></td>
             <td><div class="exp-cell ${usd?'':'empty'}" onclick="editExpense(event,'${e.id}','usd')">${usd?`<span class="exp-amount">$${usd.toLocaleString()}</span>`:'$0'}</div></td>
             <td><div class="exp-cell ${e.notes?'':'empty'}" onclick="editExpense(event,'${e.id}','notes')">${e.notes?escapeHtml(e.notes):'—'}</div></td>
@@ -5808,7 +5930,7 @@
         </div>
         <input type="file" id="backupFileInput" accept="application/json,.json" style="display:none" onchange="handleBackupFile(event)">
         <div style="font-size:11px;color:var(--text-muted);margin-top:8px">Backup saves your entire database (all months). Restore lets you compare and load a backup file.</div>
-        <div style="margin-top:16px">${buildReport(pk, revenue, expenses, profit)}</div>
+        <div style="margin-top:16px">${buildReport(pk, fin.grossUSD, periodExpenses(pk), profitTaka, rate)}</div>
         <div style="margin-top:18px">
           <div class="notes-label">Custom Notes (your own text, shown in green)</div>
           <textarea class="notes-area" id="notesArea" placeholder="Add your own notes for this month here..." onchange="saveNote()">${escapeHtml(data.notes[pk] || '')}</textarea>
@@ -5824,6 +5946,15 @@
     data.monthRates[pk] = Number(val) || 0;
     renderFinance(); await saveData();
   }
+  async function updateMonthCardRate(val) {
+    const pk = activePeriodKey();
+    if (!data.monthCardRates) data.monthCardRates = {};
+    data.monthCardRates[pk] = Number(val) || 0;
+    renderFinance(); await saveData();
+  }
+  let _fogClk=0,_fogTm=null;
+  function handleProfitFogClick(e){_fogClk++;if(_fogTm)clearTimeout(_fogTm);_fogTm=setTimeout(()=>{_fogClk=0},500);if(_fogClk>=3){_fogClk=0;const el=e.currentTarget;el.classList.toggle('revealed');if(el.classList.contains('revealed'))setTimeout(()=>el.classList.remove('revealed'),15000);}}
+
   async function updateTakaRevenue(val) {
     const pk = activePeriodKey();
     if (!data.takaRevenue) data.takaRevenue = {};
@@ -5883,7 +6014,7 @@
   }
 
 
-  function buildReport(pk, revenue, expenses, profit) {
+  function buildReport(pk, revenue, expenses, profitTk, sellRate) {
     const prows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk);
     const doneRows = prows.filter(r => r.status === 'Done');
     const videoCount = prows.length;
@@ -5899,8 +6030,8 @@
     let r = `<div class="report-box">`;
     r += `<div class="report-line">Total videos this month: <span class="report-num">${videoCount}</span> (<span class="report-num">${doneCount}</span> done${pendingCount>0?`, ${pendingCount} pending`:''})</div>`;
     r += `<div class="report-line">Total revenue (Done only): <span class="report-num">$${revenue.toLocaleString()}</span></div>`;
-    r += `<div class="report-line">Total expenses: <span class="report-num neg">$${expenses.toLocaleString()}</span></div>`;
-    r += `<div class="report-line"><strong>Net profit: <span class="report-num">$${profit.toLocaleString()}</span></strong></div>`;
+    r += `<div class="report-line">Total expenses (USD equiv): <span class="report-num neg">$${expenses.toLocaleString()}</span></div>`;
+    r += `<div class="report-line"><strong>Net profit: <span class="report-num">৳ ${Math.round(profitTk).toLocaleString()}</span></strong> <span style="font-size:11px;color:var(--text-muted)">~$${(sellRate ? Math.round((profitTk/sellRate)*100)/100 : 0).toLocaleString()}</span></div>`;
     r += `<div class="report-line">Total points earned: <span class="report-num pts">${totalPts}</span></div>`;
     if (pendingCount > 0) {
       r += `<div class="report-line" style="color:var(--amber);margin-top:4px"><em>Note: ${pendingCount} non-Done project${pendingCount===1?'':'s'} will auto-roll to next month on the 16th.</em></div>`;
@@ -6305,10 +6436,11 @@
   function downloadReportTXT() {
     const pk = activePeriodKey();
     const label = periodKeyToLabel(pk);
-    const rate = monthRate(pk);
-    const revenue = periodRevenue(pk);
-    const expenses = periodExpenses(pk);
-    const profit = revenue - expenses;
+    const fin = periodFinancials(pk);
+    const rate = fin.sellRate;
+    const cardRate = fin.cardRate;
+    const profitOv = (data.profitOverride||{})[pk];
+    const profitTk = (profitOv != null && profitOv !== '') ? Number(profitOv) : fin.profitTaka;
     const split = data.split || {};
     const order = ['Rashid','Fahim'];
     const splitNames = [...order.filter(n => n in split), ...Object.keys(split).filter(n => !order.includes(n))];
@@ -6327,21 +6459,26 @@
     L.push('           ' + label);
     L.push(HR);
     L.push('');
-    L.push('Exchange rate this month:  1 USD = ' + rate + ' BDT');
+    L.push('Selling rate:  1 USD = ' + rate + ' BDT');
+    L.push('Card rate:     1 USD = ' + cardRate + ' BDT');
     L.push('Generated: ' + new Date().toLocaleString());
     L.push('');
     L.push('SUMMARY');
     L.push(hr);
-    L.push(pad('Total Revenue', 28) + money(revenue));
-    L.push(pad('Total Expenses', 28) + '- ' + money(expenses));
-    L.push(pad('NET PROFIT', 28) + money(profit) + '   (' + tk(taka(profit, rate)) + ')');
+    L.push(pad('USD Revenue', 28) + money(fin.grossUSD));
+    if (fin.fiverUSD > 0) L.push(pad('Fiverr Deductions', 28) + '- ' + money(fin.fiverUSD));
+    if (fin.fiverUSD > 0) L.push(pad('Net USD', 28) + money(fin.netUSD));
+    L.push(pad('Revenue in Taka (x' + rate + ')', 28) + tk(fin.revTaka));
+    L.push(pad('Local Expenses', 28) + '- ' + tk(fin.takaExp));
+    if (fin.cardUSD > 0) L.push(pad('Card Expenses ($' + fmtMoney(fin.cardUSD) + 'x' + cardRate + ')', 28) + '- ' + tk(fin.cardTaka));
+    L.push(pad('NET PROFIT', 28) + tk(profitTk) + '   (~' + money(rate ? Math.round((profitTk/rate)*100)/100 : 0) + ')');
     L.push('');
     L.push('PROFIT SPLIT (after expenses)');
     L.push(hr);
     splitNames.forEach(name => {
       const pct = Number(split[name])||0;
-      const cut = Math.round(profit * pct / 100);
-      L.push(pad(name + ' (' + pct + '%)', 28) + money(cut) + '   (' + tk(taka(cut, rate)) + ')');
+      const cut = Math.round(profitTk * pct / 100);
+      L.push(pad(name + ' (' + pct + '%)', 28) + tk(cut) + '   (~' + money(rate ? Math.round((cut/rate)*100)/100 : 0) + ')');
     });
     L.push('');
     L.push('EXPENSES');
@@ -6917,6 +7054,21 @@
       await loadData(); loadSession(); populateLoginDropdown();
       await rolloverIncomplete();
       await snapshotPastPeriodsOnce();
+      // One-time migration: three-tier expense rates for Aug/Sep 2026
+      {
+        const _augList = data.expenses['2026-08'] || [];
+        const _needMig = _augList.some(e => e.name === 'Claude' || e.name === 'Upqork connecet' || e.name === 'plusvibe');
+        if (_needMig) {
+          const _renames = {'2026-08':{'Claude':'Claude card','Upqork connecet':'Upwork card','plusvibe':'Plusvibe card'},'2026-09':{'claude':'Claude card','Epidemic sound':'Epidemic sound card','uk phone number':'UK phone card','Call app':'Call app card','wise business account':'Wise card'}};
+          for (const [pk,nm] of Object.entries(_renames)) { (data.expenses[pk]||[]).forEach(e => { if (nm[e.name]) e.name = nm[e.name]; }); }
+          if (data.profitOverride) { delete data.profitOverride['2026-08']; delete data.profitOverride['2026-09']; }
+          await saveData();
+        }
+        if (!data.monthRates) data.monthRates = {};
+        if (!data.monthCardRates) data.monthCardRates = {};
+        if (!data.monthRates['2026-08']) { data.monthRates['2026-08'] = 125; data.monthRates['2026-09'] = 125; }
+        if (!data.monthCardRates['2026-08']) { data.monthCardRates['2026-08'] = 123; data.monthCardRates['2026-09'] = 123; await saveData(); }
+      }
       const purged = purgeOldRecycleBin();
       const purgedExp = purgeOldExpenseBin();
       if (purged || purgedExp || _needSplitSave) { await saveData(); _needSplitSave = false; }
