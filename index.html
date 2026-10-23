@@ -773,7 +773,7 @@
   /* Leads pipeline board */
   .leads-board { display: grid; grid-template-columns: repeat(6, minmax(240px, 1fr)); gap: 14px; padding-bottom: 20px; overflow-x: auto; }
   @media (max-width: 1400px) { .leads-board { grid-template-columns: repeat(3, minmax(240px, 1fr)); } }
-  @media (max-width: 900px) { .leads-board { grid-template-columns: 1fr; } .lead-col { min-height: 0; } .lead-empty-col { padding: 14px; } }
+  @media (max-width: 900px) { .leads-board { grid-template-columns: repeat(6, 80vw); overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; } .lead-col { min-height: 0; scroll-snap-align: start; } .lead-empty-col { padding: 14px; } }
 
   /* Responsive 2-col grids (collapse on mobile) — used by expenses, lead editor, point calc */
   .grid-2col { display: grid; grid-template-columns: 1fr 1fr; }
@@ -1012,55 +1012,6 @@
   .leader-star.active { color: var(--gold); }
   .leader-star:hover { color: var(--gold); }
 
-  /* Foggy blur on profit/split amounts */
-  .profit-fog {
-    position: relative;
-    user-select: none;
-    cursor: default;
-  }
-  .profit-fog .fog-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    background: linear-gradient(135deg,
-      rgba(5,20,14,0.7) 0%,
-      rgba(10,30,20,0.5) 30%,
-      rgba(5,20,14,0.65) 60%,
-      rgba(10,30,20,0.55) 100%);
-    backdrop-filter: blur(14px) saturate(0.6);
-    -webkit-backdrop-filter: blur(14px) saturate(0.6);
-    border-radius: 12px;
-    transition: opacity 0.5s ease, backdrop-filter 0.5s ease;
-    animation: fogDrift 6s ease-in-out infinite alternate;
-  }
-  .profit-fog.revealed .fog-overlay {
-    opacity: 0;
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
-    pointer-events: none;
-  }
-  @keyframes fogDrift {
-    0% { background-position: 0% 50%; opacity: 0.92; }
-    50% { opacity: 0.85; }
-    100% { background-position: 100% 50%; opacity: 0.95; }
-  }
-  .profit-fog .fog-hint {
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    color: var(--text-muted);
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    letter-spacing: 0.04em;
-  }
-  .profit-fog:hover .fog-hint { opacity: 1; }
-  .profit-fog.revealed .fog-hint { display: none; }
 </style>
 </head>
 <body>
@@ -5480,14 +5431,21 @@
     const avgProfit = points.length ? totalProfit / points.length : 0;
     const avgMargin = totalRev ? Math.round((totalProfit / totalRev) * 100) : 0;
     const pctOf = (v) => totalRev ? Math.round((v / totalRev) * 100) : 0;
-    const maxVal = Math.max(...points.map(p => Math.max(p.rev, Math.abs(p.profit))), 1);
+    const allVals = points.flatMap(p => [p.rev, p.profit]);
+    const rawMax = Math.max(...allVals, 1);
+    const rawMin = Math.min(...allVals, 0);
+    const range = rawMax - rawMin || 1;
+    const pad = range * 0.12;
+    const yMin = Math.max(0, rawMin - pad);
+    const yMax = rawMax + pad;
+    const yRange = yMax - yMin || 1;
 
-    const W = 700, H = 180, padL = 0, padR = 0, padT = 10, padB = 4;
+    const W = 700, H = 180, padL = 40, padR = 0, padT = 10, padB = 4;
     const chartW = W - padL - padR;
     const chartH = H - padT - padB;
     const step = points.length > 1 ? chartW / (points.length - 1) : chartW;
 
-    const toY = (v) => padT + chartH - (v / maxVal) * chartH;
+    const toY = (v) => padT + chartH - ((v - yMin) / yRange) * chartH;
     const toX = (i) => padL + i * step;
 
     const makeSmoothPath = (dataKey) => {
@@ -5507,7 +5465,7 @@
     };
     const makePath = makeSmoothPath;
     const makeArea = (dataKey) => {
-      const base = toY(0);
+      const base = padT + chartH;
       const top = makeSmoothPath(dataKey);
       return `${top} L${toX(points.length-1).toFixed(1)},${base} L${toX(0).toFixed(1)},${base} Z`;
     };
@@ -5521,7 +5479,10 @@
     let gridSvg = '';
     for (let i = 0; i <= gridLines; i++) {
       const y = padT + (chartH / gridLines) * i;
+      const val = yMax - (i / gridLines) * yRange;
+      const label = val >= 1000 ? '$' + (val/1000).toFixed(1) + 'k' : '$' + Math.round(val);
       gridSvg += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(28,56,43,0.3)" stroke-width="1"/>`;
+      gridSvg += `<text x="${padL-4}" y="${y+3}" fill="var(--text-muted)" font-size="8" text-anchor="end" opacity="0.6">${label}</text>`;
     }
 
     const hoverRects = points.map((p, i) => {
@@ -5727,9 +5688,6 @@
         <div class="fin-stat" style="border-top:1px dashed var(--border);padding-top:10px;margin-top:6px"><span class="label" style="font-weight:700;color:var(--text)">Revenue in Taka <span style="font-size:10px;color:var(--text-muted);opacity:0.7;font-weight:400">(at ${rate}৳)</span></span><span class="val rev" style="font-weight:700">৳ ${fin.revTaka.toLocaleString()}</span></div>
         <div class="fin-stat"><span class="label">Local Expenses <span style="font-size:10px;color:var(--text-muted);opacity:0.7">(salaries, food, office)</span></span><span class="val neg">- ৳ ${fin.takaExp.toLocaleString()}</span></div>
         ${fin.cardUSD > 0 ? `<div class="fin-stat"><span class="label">Card Expenses <span style="font-size:10px;color:var(--text-muted);opacity:0.7">($${fmtMoney(fin.cardUSD)} × ${cardRate}৳)</span></span><span class="val neg">- ৳ ${fin.cardTaka.toLocaleString()}</span></div>` : ''}
-        <div class="profit-fog" id="profitFog" onclick="handleProfitFogClick(event)">
-          <div class="fog-overlay"></div>
-          <div class="fog-hint">triple-click to reveal</div>
           <div class="fin-big">
             <div style="display:flex;align-items:center;justify-content:center;gap:6px">
               <span style="color:var(--text-muted);font-size:22px;font-weight:700;font-family:var(--font-display)">৳</span>
@@ -5742,16 +5700,12 @@
             <input type="text" id="profitNoteInput" value="${escapeAttr(profitNote)}" placeholder="Add a note about this profit..." onchange="updateProfitNote(this.value)"
               style="width:100%;margin-top:12px;padding:8px 10px;font-size:12px;background:rgba(5,13,10,0.5);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui)">
           </div>
-        </div>
       </div>`;
 
-    // Profit split — taka-based, also fogged
+    // Profit split — taka-based
     html += `
       <div class="fin-card">
         <h3>Profit Split (after expenses)</h3>
-        <div class="profit-fog" id="splitFog" onclick="handleProfitFogClick(event)">
-          <div class="fog-overlay"></div>
-          <div class="fog-hint">triple-click to reveal</div>
           ${splitNames.map(name => {
             const pct = Number(split[name])||0;
             const profitCut = Math.round(profitTaka * pct / 100);
@@ -5769,7 +5723,6 @@
               </div>`;
           }).join('')}
           ${splitTotal !== 100 ? `<div class="split-warn">⚠ Percentages total ${splitTotal}% (should be 100%)</div>` : ''}
-        </div>
       </div>`;
 
     html += '</div>';
@@ -5952,8 +5905,6 @@
     data.monthCardRates[pk] = Number(val) || 0;
     renderFinance(); await saveData();
   }
-  let _fogClk=0,_fogTm=null;
-  function handleProfitFogClick(e){_fogClk++;if(_fogTm)clearTimeout(_fogTm);_fogTm=setTimeout(()=>{_fogClk=0},500);if(_fogClk>=3){_fogClk=0;const el=e.currentTarget;el.classList.toggle('revealed');if(el.classList.contains('revealed'))setTimeout(()=>el.classList.remove('revealed'),15000);}}
 
   async function updateTakaRevenue(val) {
     const pk = activePeriodKey();
