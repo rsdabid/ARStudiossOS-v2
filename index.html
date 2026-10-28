@@ -1070,8 +1070,9 @@
     <div class="toolbar">
       <div class="toolbar-group" style="align-items:center;gap:4px">
         <span class="toolbar-label">Period</span>
+        <select id="crmYearSelect" class="tb-select" onchange="changeYear(this.value)" style="width:72px;font-size:12px"></select>
         <button class="btn-tb period-arrow" onclick="shiftPeriod(-1)" title="Previous month" style="padding:4px 8px;font-size:16px;line-height:1">‹</button>
-        <span id="crmPeriodDisplay" style="font-size:13px;font-weight:600;color:var(--text);min-width:100px;text-align:center;white-space:nowrap"></span>
+        <span id="crmPeriodDisplay" style="font-size:13px;font-weight:600;color:var(--text);min-width:60px;text-align:center;white-space:nowrap"></span>
         <button class="btn-tb period-arrow" onclick="shiftPeriod(1)" title="Next month" style="padding:4px 8px;font-size:16px;line-height:1">›</button>
       </div>
       <div class="toolbar-group">
@@ -1127,8 +1128,9 @@
     <div class="toolbar">
       <div class="toolbar-group" style="align-items:center;gap:4px">
         <span class="toolbar-label">Period</span>
+        <select id="finYearSelect" class="tb-select" onchange="changeYear(this.value)" style="width:72px;font-size:12px"></select>
         <button class="btn-tb period-arrow" onclick="shiftPeriod(-1)" title="Previous month" style="padding:4px 8px;font-size:16px;line-height:1">‹</button>
-        <span id="finPeriodDisplay" style="font-size:13px;font-weight:600;color:var(--text);min-width:100px;text-align:center;white-space:nowrap"></span>
+        <span id="finPeriodDisplay" style="font-size:13px;font-weight:600;color:var(--text);min-width:60px;text-align:center;white-space:nowrap"></span>
         <button class="btn-tb period-arrow" onclick="shiftPeriod(1)" title="Next month" style="padding:4px 8px;font-size:16px;line-height:1">›</button>
       </div>
     </div>
@@ -1351,7 +1353,7 @@
   // Field mappings: DB snake_case ↔ JS camelCase
   const PROJECT_FIELDS = {
     id:'id', period:'period', raw_file:'rawFile', editor:'editor', client:'client',
-    revenue:'revenue', revenue_gross:'revenueGross', revenue_source:'revenueSource', revenue_taka:'revenueTakaAmount', revenue_taka_rate:'revenueTakaRate',
+    revenue:'revenue', revenue_gross:'revenueGross', revenue_source:'revenueSource',
     points:'points', point_calc:'pointCalc', status:'status', deadline:'deadline',
     frameio:'frameio', final_video:'finalVideo', notes:'notes', rolled_from:'rolledFrom',
     created_at:'createdAt', created_by:'createdBy'
@@ -2394,12 +2396,25 @@
 
   function populateMonthSelectors() {
     const active = activePeriodKey();
-    const label = periodKeyToLabel(active);
+    const [ay, am] = active.split('-').map(Number);
     const cur = currentPeriodKey();
-    const tag = active === cur ? ' (current)' : '';
+    const isCurrent = active === cur;
+    const monthLabel = MONTH_NAMES[am - 1] + (isCurrent ? ' (current)' : '');
     ['crmPeriodDisplay','finPeriodDisplay'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.textContent = label + tag;
+      if (el) el.textContent = monthLabel;
+    });
+    const thisYear = new Date().getFullYear();
+    const years = [];
+    for (let y = 2025; y <= thisYear + 1; y++) years.push(y);
+    ['crmYearSelect','finYearSelect'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const prev = sel.value;
+      if (!sel.options.length || sel.options.length !== years.length) {
+        sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      }
+      sel.value = String(ay);
     });
   }
 
@@ -2410,6 +2425,15 @@
     if (nm < 1) { nm = 12; ny--; }
     if (nm > 12) { nm = 1; ny++; }
     selectedPeriod = `${ny}-${String(nm).padStart(2,'0')}`;
+    _afterPeriodChange();
+  }
+  function changeYear(yearStr) {
+    const active = activePeriodKey();
+    const m = active.split('-').map(Number)[1];
+    selectedPeriod = `${yearStr}-${String(m).padStart(2,'0')}`;
+    _afterPeriodChange();
+  }
+  function _afterPeriodChange() {
     populateMonthSelectors();
     document.getElementById('crmPeriodLabel').textContent = 'Period: ' + periodLabel();
     document.getElementById('lbPeriodLabel').textContent = 'Period: ' + periodLabel();
