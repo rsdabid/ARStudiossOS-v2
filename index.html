@@ -1068,12 +1068,11 @@
       <div><div class="section-title">Editor CRM</div><div class="section-sub" id="crmPeriodLabel"></div></div>
     </div>
     <div class="toolbar">
-      <div class="toolbar-group">
+      <div class="toolbar-group" style="align-items:center;gap:4px">
         <span class="toolbar-label">Period</span>
-        <select id="crmYear" class="tb-select" onchange="changeYearMonth('crm')"></select>
-      </div>
-      <div class="toolbar-group">
-        <select id="crmMonthSel" class="tb-select" onchange="changeYearMonth('crm')" style="padding-left:14px"></select>
+        <button class="btn-tb period-arrow" onclick="shiftPeriod(-1)" title="Previous month" style="padding:4px 8px;font-size:16px;line-height:1">‹</button>
+        <span id="crmPeriodDisplay" style="font-size:13px;font-weight:600;color:var(--text);min-width:100px;text-align:center;white-space:nowrap"></span>
+        <button class="btn-tb period-arrow" onclick="shiftPeriod(1)" title="Next month" style="padding:4px 8px;font-size:16px;line-height:1">›</button>
       </div>
       <div class="toolbar-group">
         <span class="toolbar-label">Sort</span>
@@ -1126,12 +1125,11 @@
   <div class="page" id="page-finance">
     <div class="section-header"><div><div class="section-title">Finance</div><div class="section-sub" id="financePeriodLabel"></div></div></div>
     <div class="toolbar">
-      <div class="toolbar-group">
+      <div class="toolbar-group" style="align-items:center;gap:4px">
         <span class="toolbar-label">Period</span>
-        <select id="finYear" class="tb-select" onchange="changeYearMonth('finance')"></select>
-      </div>
-      <div class="toolbar-group">
-        <select id="finMonthSel" class="tb-select" onchange="changeYearMonth('finance')" style="padding-left:14px"></select>
+        <button class="btn-tb period-arrow" onclick="shiftPeriod(-1)" title="Previous month" style="padding:4px 8px;font-size:16px;line-height:1">‹</button>
+        <span id="finPeriodDisplay" style="font-size:13px;font-weight:600;color:var(--text);min-width:100px;text-align:center;white-space:nowrap"></span>
+        <button class="btn-tb period-arrow" onclick="shiftPeriod(1)" title="Next month" style="padding:4px 8px;font-size:16px;line-height:1">›</button>
       </div>
     </div>
     <div id="finChartContainer"></div>
@@ -1353,7 +1351,7 @@
   // Field mappings: DB snake_case ↔ JS camelCase
   const PROJECT_FIELDS = {
     id:'id', period:'period', raw_file:'rawFile', editor:'editor', client:'client',
-    revenue:'revenue', revenue_gross:'revenueGross', revenue_source:'revenueSource',
+    revenue:'revenue', revenue_gross:'revenueGross', revenue_source:'revenueSource', revenue_taka:'revenueTakaAmount', revenue_taka_rate:'revenueTakaRate',
     points:'points', point_calc:'pointCalc', status:'status', deadline:'deadline',
     frameio:'frameio', final_video:'finalVideo', notes:'notes', rolled_from:'rolledFrom',
     created_at:'createdAt', created_by:'createdBy'
@@ -1788,6 +1786,7 @@
     } finally {
       isSaving = false;
       if (pendingSave) { pendingSave = false; saveData(); }
+      else { _drainPendingRemote(); }
     }
   }
 
@@ -1807,6 +1806,7 @@
   // ===== REALTIME — instant cross-tab sync =====
   let _realtimeChannel = null;
   let _renderQueued = false;
+  let _pendingRemoteEvents = [];
 
   function _queueRender() {
     if (_renderQueued) return;
@@ -1820,8 +1820,22 @@
     });
   }
 
+  function _drainPendingRemote() {
+    if (!_pendingRemoteEvents.length) return;
+    const events = _pendingRemoteEvents.slice();
+    _pendingRemoteEvents = [];
+    events.forEach(([t, p]) => _applyRemote(t, p));
+  }
+
   function _onRemote(table, payload) {
-    if (isSaving || pendingSave) return;
+    if (isSaving || pendingSave) {
+      _pendingRemoteEvents.push([table, payload]);
+      return;
+    }
+    _applyRemote(table, payload);
+  }
+
+  function _applyRemote(table, payload) {
     const { eventType, new: nw, old: ol } = payload;
     let changed = false;
 
@@ -2380,33 +2394,22 @@
 
   function populateMonthSelectors() {
     const active = activePeriodKey();
-    const [activeY, activeM] = active.split('-').map(Number);
+    const label = periodKeyToLabel(active);
     const cur = currentPeriodKey();
-    const [curY] = cur.split('-').map(Number);
-
-    // Years: from 2024 up to current year + 2
-    const years = [];
-    for (let y = 2024; y <= curY + 2; y++) years.push(y);
-    const yearHtml = years.map(y => `<option value="${y}">${y}</option>`).join('');
-    const monthHtml = MONTH_FULL.map((mn, i) => {
-      const key = `${activeY}-${String(i+1).padStart(2,'0')}`;
-      const isCur = key === cur;
-      return `<option value="${i+1}">${mn}${isCur ? ' (current)' : ''}</option>`;
-    }).join('');
-
-    [['crmYear','crmMonthSel'],['finYear','finMonthSel']].forEach(([yId, mId]) => {
-      const yEl = document.getElementById(yId), mEl = document.getElementById(mId);
-      if (yEl) { yEl.innerHTML = yearHtml; yEl.value = activeY; }
-      if (mEl) { mEl.innerHTML = monthHtml; mEl.value = activeM; }
+    const tag = active === cur ? ' (current)' : '';
+    ['crmPeriodDisplay','finPeriodDisplay'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = label + tag;
     });
   }
 
-  function changeYearMonth(which) {
-    const yId = which === 'crm' ? 'crmYear' : 'finYear';
-    const mId = which === 'crm' ? 'crmMonthSel' : 'finMonthSel';
-    const y = Number(document.getElementById(yId).value);
-    const m = Number(document.getElementById(mId).value);
-    selectedPeriod = `${y}-${String(m).padStart(2,'0')}`;
+  function shiftPeriod(dir) {
+    const active = activePeriodKey();
+    const [y, m] = active.split('-').map(Number);
+    let nm = m + dir, ny = y;
+    if (nm < 1) { nm = 12; ny--; }
+    if (nm > 12) { nm = 1; ny++; }
+    selectedPeriod = `${ny}-${String(nm).padStart(2,'0')}`;
     populateMonthSelectors();
     document.getElementById('crmPeriodLabel').textContent = 'Period: ' + periodLabel();
     document.getElementById('lbPeriodLabel').textContent = 'Period: ' + periodLabel();
@@ -3406,49 +3409,7 @@
       html += `</tbody></table></div></div>`;
     });
 
-    // Unassigned bucket — rows with no editor (and no client either, since client rows have their own tab)
-    const unassigned = allRows.filter(r => !r.editor && !r.client && filterRow(r));
-    if (unassigned.length > 0) {
-      html += `<div class="client-section" style="margin-bottom:32px">
-        <div class="client-section-header">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div class="client-avatar" style="background:linear-gradient(135deg, #6b7480, #4a5158);color:#fff">?</div>
-            <div>
-              <div style="font-size:16px;font-weight:700;color:var(--text);font-family:var(--font-display);letter-spacing:-0.01em">Unassigned</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${unassigned.length} row${unassigned.length===1?'':'s'} waiting to be assigned</div>
-            </div>
-          </div>
-        </div>
-        <div class="table-wrap" style="margin-top:10px">
-          <table class="crm">
-            <thead><tr>
-              <th style="width:36px">#</th>
-              ${cols.map(c => `<th>${escapeHtml(c.label)}</th>`).join('')}
-              <th style="width:60px"></th>
-            </tr></thead>
-            <tbody>
-              ${unassigned.map((r, idx) => {
-                const num = `<td><div class="cell row-num">${idx + 1}</div></td>`;
-                const cells = cols.map(c => renderCell(r, c)).join('');
-                const copyBtn = `<span class="row-action" onclick="event.stopPropagation();copyRow('${r.id}')" title="Copy row" style="cursor:pointer;opacity:0.4;margin-right:6px;font-size:13px">📋</span>`;
-                const delBtn = canDeleteRow(r) ? `<span class="row-delete" onclick="deleteRow('${r.id}')" title="Delete row">🗑</span>` : '';
-                return `<tr data-row="${r.id}">${num}${cells}<td style="text-align:center;white-space:nowrap">${copyBtn}${delBtn}</td></tr>`;
-              }).join('')}
-              <tr class="shadow-row">
-                <td></td>
-                ${cols.map(c => '<td></td>').join('')}
-                <td style="text-align:right">
-                  <div class="shadow-actions">
-                    <button class="btn-tb" onclick="addRow()">＋ Add Row</button>
-                    ${clipboardRow ? `<button class="btn-tb" onclick="pasteRow(null)" style="opacity:0.8">📋 Paste</button>` : ''}
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>`;
-    }
+    // Unassigned rows are no longer shown as a separate section
 
     // Overall totals card at the bottom
     const allFiltered = allRows.filter(filterRow);
@@ -3593,7 +3554,8 @@
     }
     if (c.type === 'revenue') {
       const fiBadge = r.revenueSource === 'fiverr' ? `<span class="fi-badge" title="Fiverr · 20% fee already deducted">fi</span>` : '';
-      const disp = val ? `<span class="revenue-val">$${Number(val).toLocaleString()}</span>${fiBadge}` : `<span class="cell-empty">$0</span>`;
+      const tkBadge = r.revenueSource === 'taka' ? `<span class="fi-badge" title="Taka revenue · ৳${(r.revenueTakaAmount||0).toLocaleString()} at ${r.revenueTakaRate||0}৳" style="background:rgba(255,183,71,0.15);color:var(--amber)">৳</span>` : '';
+      const disp = val ? `<span class="revenue-val">$${Number(val).toLocaleString()}</span>${fiBadge}${tkBadge}` : `<span class="cell-empty">$0</span>`;
       const click = editable ? `onclick="editNumCell(event,'${r.id}','revenue')"` : '';
       return `<td><div class="num-cell" ${click}>${disp}</div></td>`;
     }
@@ -4019,16 +3981,24 @@
     const menu = document.createElement('div');
     menu.className = 'dropdown-menu revenue-editor';
     menu.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.bottom + 4}px;min-width:240px;padding:12px;z-index:500`;
-    const isFiverr = !!r.revenueSource && r.revenueSource === 'fiverr';
-    const gross = r.revenueGross != null ? r.revenueGross : (r.revenue || '');
+    const curSrc = r.revenueSource || 'other';
+    const isFiverr = curSrc === 'fiverr';
+    const isTaka = curSrc === 'taka';
+    const gross = isTaka ? (r.revenueTakaAmount || '') : (r.revenueGross != null ? r.revenueGross : (r.revenue || ''));
+    const srcBtn = (val, label) => {
+      const a = curSrc === val;
+      return `<button type="button" data-src="${val}" class="rev-src-btn ${a?'active':''}" style="flex:1;padding:7px 10px;font-size:11px;font-weight:700;letter-spacing:0.04em;border-radius:8px;border:1px solid var(--border);background:${a?'var(--green-deep)':'transparent'};color:${a?'#052e20':'var(--text-muted)'};cursor:pointer;font-family:var(--font-ui)">${label}</button>`;
+    };
+    const revLabelText = isFiverr ? 'GROSS (BEFORE 20% FIVERR FEE)' : isTaka ? 'AMOUNT IN TAKA (৳)' : 'AMOUNT';
     menu.innerHTML = `
       <div style="display:flex;gap:6px;margin-bottom:10px">
-        <button type="button" data-src="other" class="rev-src-btn ${!isFiverr?'active':''}" style="flex:1;padding:7px 10px;font-size:11px;font-weight:700;letter-spacing:0.04em;border-radius:8px;border:1px solid var(--border);background:${!isFiverr?'var(--green-deep)':'transparent'};color:${!isFiverr?'#052e20':'var(--text-muted)'};cursor:pointer;font-family:var(--font-ui)">OTHER</button>
-        <button type="button" data-src="fiverr" class="rev-src-btn ${isFiverr?'active':''}" style="flex:1;padding:7px 10px;font-size:11px;font-weight:700;letter-spacing:0.04em;border-radius:8px;border:1px solid var(--border);background:${isFiverr?'var(--green-deep)':'transparent'};color:${isFiverr?'#052e20':'var(--text-muted)'};cursor:pointer;font-family:var(--font-ui)">FIVERR</button>
+        ${srcBtn('other','OTHER')}
+        ${srcBtn('fiverr','FIVERR')}
+        ${srcBtn('taka','TAKA')}
       </div>
-      <div style="font-size:10px;color:var(--text-muted);letter-spacing:0.04em;margin-bottom:4px" id="revLabel">${isFiverr?'GROSS (BEFORE 20% FIVERR FEE)':'AMOUNT'}</div>
+      <div style="font-size:10px;color:var(--text-muted);letter-spacing:0.04em;margin-bottom:4px" id="revLabel">${revLabelText}</div>
       <input type="number" min="0" step="any" id="revInput" value="${escapeAttr(gross)}" style="width:100%;padding:8px 10px;font-size:13px;background:rgba(5,13,10,0.6);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-ui)">
-      <div id="revPreview" style="font-size:11px;color:var(--text-muted);margin-top:8px;display:${isFiverr?'block':'none'}"></div>
+      <div id="revPreview" style="font-size:11px;color:var(--text-muted);margin-top:8px;display:${isFiverr||isTaka?'block':'none'}"></div>
       <div style="display:flex;gap:6px;margin-top:12px">
         <button type="button" id="revCancel" style="flex:1;padding:7px;font-size:11px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--text-muted);cursor:pointer;font-family:var(--font-ui)">Cancel</button>
         <button type="button" id="revSave" style="flex:1;padding:7px;font-size:11px;background:var(--green-deep);border:none;border-radius:7px;color:#052e20;font-weight:700;cursor:pointer;font-family:var(--font-ui)">Save</button>
@@ -4039,7 +4009,7 @@
     const input = menu.querySelector('#revInput');
     const preview = menu.querySelector('#revPreview');
     const label = menu.querySelector('#revLabel');
-    let src = isFiverr ? 'fiverr' : 'other';
+    let src = curSrc;
     function updatePreview() {
       const gv = parseFloat(input.value) || 0;
       if (src === 'fiverr') {
@@ -4047,6 +4017,12 @@
         preview.style.display = 'block';
         preview.innerHTML = `Gross: $${gv.toFixed(2)} · Fiverr fee 20%: −$${(gv*0.2).toFixed(2)} · <span style="color:var(--green);font-weight:700">Net: $${net.toFixed(2)}</span>`;
         label.textContent = 'GROSS (BEFORE 20% FIVERR FEE)';
+      } else if (src === 'taka') {
+        const sr = monthRate(activePeriodKey());
+        const usdEquiv = sr ? Math.round((gv / sr) * 100) / 100 : 0;
+        preview.style.display = 'block';
+        preview.innerHTML = `৳${gv.toLocaleString()} ÷ ${sr} = <span style="color:var(--green);font-weight:700">$${usdEquiv.toFixed(2)}</span> <span style="opacity:0.6">(at selling rate)</span>`;
+        label.textContent = 'AMOUNT IN TAKA (৳)';
       } else {
         preview.style.display = 'none';
         label.textContent = 'AMOUNT';
@@ -4072,16 +4048,26 @@
       const gv = input.value.trim();
       if (gv === '') {
         r.revenue = null; r.revenueGross = null; r.revenueSource = null;
+        r.revenueTakaAmount = null; r.revenueTakaRate = null;
       } else {
         const g = Number(gv);
         if (src === 'fiverr') {
           r.revenueSource = 'fiverr';
           r.revenueGross = g;
-          r.revenue = Math.round(g * 0.8 * 100) / 100; // net 80%, 2 decimals
+          r.revenue = Math.round(g * 0.8 * 100) / 100;
+          r.revenueTakaAmount = null; r.revenueTakaRate = null;
+        } else if (src === 'taka') {
+          const sr = monthRate(activePeriodKey());
+          r.revenueSource = 'taka';
+          r.revenueTakaAmount = g;
+          r.revenueTakaRate = sr;
+          r.revenue = sr ? Math.round((g / sr) * 100) / 100 : 0;
+          r.revenueGross = r.revenue;
         } else {
           r.revenueSource = 'other';
           r.revenueGross = g;
           r.revenue = g;
+          r.revenueTakaAmount = null; r.revenueTakaRate = null;
         }
       }
       // Reset points to auto from revenue — UNLESS admin set them manually via the calculator
@@ -5378,7 +5364,7 @@
   let _finChartRange = '6m';
 
   function getPastPeriodKeys(count) {
-    const cur = currentPeriodKey();
+    const cur = activePeriodKey();
     const [cy, cm] = cur.split('-').map(Number);
     const keys = [];
     for (let i = count - 1; i >= 0; i--) {
@@ -5660,17 +5646,25 @@
         </div>
       </div>`;
 
-    // Taka revenue section
+    // Current money amount
+    const takaRevRows = data.rows.filter(r => (r.period||currentPeriodKey()) === pk && isDone(r) && r.revenueSource === 'taka');
+    const totalTakaRev = takaRevRows.reduce((s,r) => s + (Number(r.revenueTakaAmount)||0), 0);
     html += `
       <div class="fin-card" style="margin-bottom:16px">
         <div class="rate-bar">
           <div>
-            <div class="notes-label" style="color:var(--green)">Revenue Received in Taka (৳)</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">For clients who pay in ৳ · converts to $${takaRevenueUSD.toLocaleString()} at selling rate</div>
+            <div class="notes-label" style="color:var(--green)">Current Money — ${escapeHtml(periodKeyToLabel(pk))}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Revenue: $${fmtMoney(usdRevenue)} · Profit: ৳${Math.round(profitTaka).toLocaleString()} (~$${fmtMoney(profitUSDEquiv)})</div>
           </div>
-          <div class="rate-bar-input">
-            <span class="rate-label" style="font-size:14px">৳</span>
-            <input type="number" class="rate-input" style="width:120px;font-size:15px" value="${takaRevenueRaw||''}" placeholder="0" onchange="updateTakaRevenue(this.value)">
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="text-align:right">
+              <div style="font-size:22px;font-weight:800;color:var(--green-bright);font-family:var(--font-display)">$${fmtMoney(usdRevenue)}</div>
+              <div style="font-size:10px;color:var(--text-muted)">USD Revenue</div>
+            </div>
+            ${totalTakaRev > 0 ? `<div style="text-align:right">
+              <div style="font-size:18px;font-weight:700;color:var(--amber);font-family:var(--font-display)">৳${totalTakaRev.toLocaleString()}</div>
+              <div style="font-size:10px;color:var(--text-muted)">Taka Revenue</div>
+            </div>` : ''}
           </div>
         </div>
       </div>`;
