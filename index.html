@@ -5639,6 +5639,9 @@
     const profitTaka = (profitOverride != null && profitOverride !== '') ? Number(profitOverride) : autoProfitTaka;
     const profitUSDEquiv = rate ? Math.round((profitTaka / rate) * 100) / 100 : 0;
     const profitNote = (data.profitNote||{})[pk] || '';
+    const doneRows = data.rows.filter(r => (r.period||currentPeriodKey()) === pk && isDone(r));
+    const fiverRev = doneRows.filter(r => r.revenueSource === 'fiverr').reduce((s,r) => s + (Number(r.revenue)||0), 0);
+    const outsideRev = doneRows.filter(r => r.revenueSource !== 'fiverr').reduce((s,r) => s + (Number(r.revenue)||0), 0);
     const split = data.split || { Rashid:77, Fahim:18, Siam:5 };
     const splitTotal = Object.values(split).reduce((s,v) => s + (Number(v)||0), 0);
 
@@ -5700,6 +5703,16 @@
       <div class="fin-card">
         <h3>Monthly Summary</h3>
         <div class="fin-stat"><span class="label">USD Revenue <span style="font-size:10px;color:var(--text-muted);opacity:0.7">(net of Fiverr 20%)</span></span><span class="val rev">$${fmtMoney(usdRevenue)}</span></div>
+        ${fiverRev > 0 || outsideRev > 0 ? `<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid rgba(28,56,43,0.4)">
+          <div style="flex:1;background:rgba(5,13,10,0.4);border-radius:10px;padding:10px 12px;border:1px solid rgba(28,56,43,0.3)">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">From Fiverr</div>
+            <div style="font-size:17px;font-weight:700;color:#7CF2C0;font-family:var(--font-display)">$${fmtMoney(fiverRev)}</div>
+          </div>
+          <div style="flex:1;background:rgba(5,13,10,0.4);border-radius:10px;padding:10px 12px;border:1px solid rgba(28,56,43,0.3)">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Outside Fiverr</div>
+            <div style="font-size:17px;font-weight:700;color:#60a5fa;font-family:var(--font-display)">$${fmtMoney(outsideRev)}</div>
+          </div>
+        </div>` : ''}
         ${fin.fiverUSD > 0 ? `<div class="fin-stat"><span class="label">Fiverr/Platform Deductions</span><span class="val neg">- $${fmtMoney(fin.fiverUSD)}</span></div>` : ''}
         ${fin.fiverUSD > 0 ? `<div class="fin-stat"><span class="label">Net USD</span><span class="val rev">$${fmtMoney(fin.netUSD)}</span></div>` : ''}
         ${takaRevenueRaw > 0 ? `<div class="fin-stat"><span class="label">+ Taka Revenue</span><span class="val rev">৳ ${takaRevenueRaw.toLocaleString()}</span></div>` : ''}
