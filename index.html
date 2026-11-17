@@ -1264,7 +1264,7 @@
     { id:'notes', label:'Notes', type:'text', adminOnly:false, locked:true, editorEditable:true }
   ];
   const DEFAULT_DATA = {
-    adminPass: '11cr',
+    adminPass: '',
     editorPass: 'editor123',
     editorAccounts: [],
     clientAccounts: [],
@@ -1456,7 +1456,7 @@
       if (errors.length) {
         console.error('Load errors:', errors);
         showError('Load error: ' + (errors[0].message || errors[0].code || 'unknown'));
-        return;
+        return false;
       }
 
       // Settings
@@ -1578,7 +1578,8 @@
 
       _lastSaved = _snap();
       clearError();
-    } catch(e) { console.error('Load failed:', e); showError('Load failed: ' + (e.message||'unknown')); }
+      return true;
+    } catch(e) { console.error('Load failed:', e); showError('Load failed: ' + (e.message||'unknown')); return false; }
   }
 
   // ===== SAVE — diff-based per-entity writes =====
@@ -2092,36 +2093,44 @@
     if (c) c.style.display = 'block';
     document.getElementById('loginError').classList.remove('show');
   }
-  function login() {
+  // Logins are checked by the database (crm_login), not in the browser. Each browser gets an
+  // anonymous Supabase session first; a correct password links that session to a CRM role.
+  async function ensureDbAuth() {
+    const { data: s } = await db.auth.getSession();
+    if (s && s.session) return;
+    const { error } = await db.auth.signInAnonymously();
+    if (error) throw error;
+  }
+  let _loggingIn = false;
+  async function login() {
+    if (_loggingIn) return;
     const role = document.querySelector('.role-tab.active').dataset.role;
     const err = document.getElementById('loginError');
+    const fail = (msg) => { err.textContent = msg || 'Wrong credentials. Try again.'; err.classList.add('show'); };
     err.classList.remove('show');
+    let name = null, pass;
     if (role === 'admin') {
-      const pw = document.getElementById('adminPass').value;
-      if (pw === 'food') {
-        session = { role:'admin', foodOnly:true }; saveSession(); showApp();
-      } else if (pw === 'leads') {
-        session = { role:'admin', leadsOnly:true }; saveSession(); showApp();
-      } else if (pw === 'admin1') {
-        session = { role:'admin' }; saveSession(); showApp();
-      } else if (pw === data.adminPass) {
-        session = { role:'admin' }; saveSession(); showApp();
-      } else { err.classList.add('show'); }
-    } else if (role === 'editor') {
-      const name = (document.getElementById('editorName').value || '').trim();
-      const pass = document.getElementById('editorPass').value;
-      if (!name || !pass) { err.classList.add('show'); return; }
-      const acct = (data.editorAccounts || []).find(a => a.name.toLowerCase() === name.toLowerCase() && a.password === pass);
-      if (acct) { session = { role:'editor', editorName: acct.name }; saveSession(); showApp(); }
-      else { err.classList.add('show'); }
+      pass = document.getElementById('adminPass').value;
+      if (!pass) { fail(); return; }
     } else {
-      const name = (document.getElementById('clientName').value || '').trim();
-      const pass = document.getElementById('clientPass').value;
-      if (!name || !pass) { err.classList.add('show'); return; }
-      const acct = (data.clientAccounts || []).find(a => a.name.toLowerCase() === name.toLowerCase() && a.password === pass);
-      if (acct) { session = { role:'client', clientName: acct.name }; saveSession(); showApp(); }
-      else { err.classList.add('show'); }
+      name = (document.getElementById(role === 'editor' ? 'editorName' : 'clientName').value || '').trim();
+      pass = document.getElementById(role === 'editor' ? 'editorPass' : 'clientPass').value;
+      if (!name || !pass) { fail(); return; }
     }
+    _loggingIn = true;
+    try {
+      await ensureDbAuth();
+      const { data: r, error } = await db.rpc('crm_login', { p_role: role, p_name: name, p_pass: pass });
+      if (error) { fail(error.message); return; }
+      if (!r) { fail(); return; }
+      if (role === 'admin') session = r.mode === 'food' ? { role:'admin', foodOnly:true } : r.mode === 'leads' ? { role:'admin', leadsOnly:true } : { role:'admin' };
+      else if (role === 'editor') session = { role:'editor', editorName: r.name };
+      else session = { role:'client', clientName: r.name };
+      saveSession();
+      if (!(await bootData())) { clearSession(); fail('Could not load data. Refresh and try again.'); return; }
+      showApp();
+    } catch(e) { console.error('Login failed:', e); fail('Connection problem: ' + (e.message || 'try again')); }
+    finally { _loggingIn = false; }
   }
   async function createClientAccount() {
     const name = (document.getElementById('newClientName').value || '').trim();
@@ -2188,6 +2197,8 @@
   }
   function logout() {
     stopAutoRefresh(); clearSession();
+    // End the database session too, then reload so no CRM data stays in this tab's memory
+    db.rpc('crm_logout').then(() => db.auth.signOut()).catch(() => {}).finally(() => location.reload());
     if (typeof stopFloatRobot === 'function') stopFloatRobot();
     if (typeof stopAdminRobot === 'function') { stopAdminRobot(); closeAdminSummary(); }
     document.getElementById('mainApp').style.display = 'none';
@@ -7031,9 +7042,10 @@
     } catch(e) { console.error('Boundary fix failed:', e); }
   }
 
-  async function init() {
-    try {
-      await loadData(); loadSession(); populateLoginDropdown();
+  // Data loads only after a login the database accepted. Returns false (and saves nothing) if loading failed.
+  async function bootData() {
+    if (!(await loadData())) return false;
+    populateLoginDropdown();
       await rolloverIncomplete();
       await snapshotPastPeriodsOnce();
       // One-time migration: three-tier expense rates for Aug/Sep 2026
@@ -7054,8 +7066,24 @@
       const purged = purgeOldRecycleBin();
       const purgedExp = purgeOldExpenseBin();
       if (purged || purgedExp || _needSplitSave) { await saveData(); _needSplitSave = false; }
+    return true;
+  }
+
+  async function init() {
+    try {
+      loadSession();
+      let restored = false;
+      if (session) {
+        // Reuse the saved login only if the database still recognises this browser's session
+        const { data: s } = await db.auth.getSession();
+        if (s && s.session) {
+          const { data: who, error } = await db.rpc('crm_whoami');
+          if (!error && who && who.role === session.role) restored = await bootData();
+        }
+        if (!restored) clearSession();
+      }
       document.getElementById('loadingOverlay').style.display = 'none';
-      if (session) showApp(); else {
+      if (restored) showApp(); else {
         document.getElementById('loginScreen').style.display = 'flex';
       }
     } catch(e) { console.error('Init failed:', e); document.getElementById('loadingText').textContent = 'Connection failed. Refresh the page.'; document.getElementById('loadingText').style.color = '#ff5252'; }
