@@ -510,17 +510,44 @@
     font-size: 14px; font-weight: 700; line-height: 1.3;
     padding: 10px 14px; border-radius: 12px; text-align: center;
     box-shadow: var(--shadow-md);
-    opacity: 0; pointer-events: none; transform: scale(0.9);
-    transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out);
+    opacity: 0; pointer-events: none; transform: translateY(4px) scale(0.95);
+    transition: opacity 0.35s ease, transform 0.35s ease;
     font-family: var(--font-ui);
+    will-change: opacity, transform;
   }
-  #floatRobotBubble.show { opacity: 1; transform: scale(1); }
+  #floatRobotBubble.show { opacity: 1; transform: translateY(0) scale(1); }
   #floatRobotBubble.angry { background: var(--red); color: #fff; }
   #floatRobotBubble::after {
     content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
     border: 6px solid transparent; border-top-color: var(--text);
   }
   #floatRobotBubble.angry::after { border-top-color: var(--red); }
+
+  #moklesIntroCard {
+    position: fixed; z-index: 9999; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: var(--card); color: var(--text); border-radius: 16px;
+    padding: 28px 24px 20px; max-width: 320px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    text-align: center; opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    font-family: var(--font-ui);
+  }
+  #moklesIntroCard.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #moklesIntroCard .mic-emoji { font-size: 48px; margin-bottom: 12px; }
+  #moklesIntroCard .mic-name { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+  #moklesIntroCard .mic-body { font-size: 14px; line-height: 1.5; opacity: 0.85; margin-bottom: 18px; }
+  #moklesIntroCard .mic-dismiss {
+    display: inline-block; padding: 8px 24px; border-radius: 8px;
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 13px;
+    cursor: pointer; border: none;
+  }
+  #moklesIntroOverlay {
+    position: fixed; z-index: 9998; inset: 0;
+    background: rgba(0,0,0,0.5); opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  #moklesIntroOverlay.show { opacity: 1; }
 
   /* Admin corner robot + summary panel */
   #adminRobot {
@@ -2419,7 +2446,7 @@
     const presetBtns = _ER_PRESETS.map((p,i) => `<div class="er-preset" onclick="editorRobotAsk(_ER_PRESETS[${i}].q)">${p.label}</div>`).join('');
     panel.innerHTML = `
       <div class="er-header">
-        <span>🤖 Robot</span>
+        <span>🤖 মি. মোকলেস</span>
         <span class="er-close" onclick="document.getElementById('editorRobotPanel').classList.remove('show')">✕</span>
       </div>
       <div class="er-body">
@@ -2464,7 +2491,7 @@
       const blackout = isCompetitionBlackout();
       const crmSnap = myRows.map(r => ({
         status: r.status, deadline: r.deadline, revenue: r.revenue,
-        points: blackout ? '(hidden — final week)' : r.points,
+        points: blackout ? '(hidden. final week)' : r.points,
         file: r.rawFile ? r.rawFile.substring(0, 60) : ''
       }));
       const otherEditors = {};
@@ -2524,6 +2551,18 @@
       document.getElementById('userBadge').textContent = '✂️ ' + editorName();
       // Start the float robot for editors (clickable for quick questions)
       setTimeout(() => startFloatRobot(), 1500);
+      // One-time Mr. Mokles intro card
+      try {
+        if (!localStorage.getItem('mokles_intro_seen')) {
+          setTimeout(() => {
+            const ov = document.createElement('div'); ov.id = 'moklesIntroOverlay'; document.body.appendChild(ov);
+            const card = document.createElement('div'); card.id = 'moklesIntroCard';
+            card.innerHTML = `<div class="mic-emoji">🤖</div><div class="mic-name">মি. মোকলেস</div><div class="mic-body">তোর নতুন AI boss. এখন থেকে আমি তোর উপর নজর রাখব.</div><button class="mic-dismiss" onclick="document.getElementById('moklesIntroCard').remove();document.getElementById('moklesIntroOverlay').remove();try{localStorage.setItem('mokles_intro_seen','1')}catch(e){}">ঠিক আছে</button>`;
+            document.body.appendChild(card);
+            requestAnimationFrame(() => { ov.classList.add('show'); card.classList.add('show'); });
+          }, 2200);
+        }
+      } catch(e) {}
       document.getElementById('financeTab').style.display = 'none';
       document.getElementById('clientsTab').style.display = 'none';
       if (leadsTab) leadsTab.style.display = 'none';
@@ -3477,20 +3516,25 @@
   function showRobotBubble(text, angry, duration) {
     const s = robotState;
     if (!s.bubble) return;
+    clearTimeout(s._bubbleHide);
+    clearTimeout(s._bubbleShow);
+    s.bubble.classList.remove('show');
     s.bubble.textContent = text;
     s.bubble.classList.toggle('angry', !!angry);
-    s.bubble.classList.add('show');
-    // Position immediately
-    s.bubble.style.left = (s.x + 36 - s.bubble.offsetWidth/2) + 'px';
-    s.bubble.style.top = (s.y - s.bubble.offsetHeight - 8) + 'px';
-    // Happy bounce when showing a message
+    s.bubble.style.left = (s.x + 36 - 90) + 'px';
+    s.bubble.style.top = (s.y - 50) + 'px';
+    s._bubbleShow = setTimeout(() => {
+      if (!s.bubble) return;
+      s.bubble.style.left = (s.x + 36 - s.bubble.offsetWidth/2) + 'px';
+      s.bubble.style.top = (s.y - s.bubble.offsetHeight - 8) + 'px';
+      s.bubble.classList.add('show');
+    }, 20);
     if (!angry && s.el) {
       s.el.classList.remove('happy');
       void s.el.offsetWidth;
       s.el.classList.add('happy');
       setTimeout(() => { if (s.el) s.el.classList.remove('happy'); }, 700);
     }
-    clearTimeout(s._bubbleHide);
     s._bubbleHide = setTimeout(() => { if (s.bubble) s.bubble.classList.remove('show'); }, duration || 6000);
   }
 
