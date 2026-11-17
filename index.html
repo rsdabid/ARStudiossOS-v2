@@ -2288,29 +2288,36 @@
   function clientName() { return session && session.clientName ? session.clientName : ''; }
   // ===== Robot login greeting (AI-powered) =====
   async function robotLoginGreeting() {
-    // Build context about this user
     const pk = activePeriodKey();
     let greetPrompt, greetRole;
+    const lsKey = 'rb_lastGreet_' + (editorName() || clientName() || 'admin');
+    const lastGreet = localStorage.getItem(lsKey);
+    const daysSinceLast = lastGreet ? Math.floor((Date.now() - Number(lastGreet)) / 86400000) : 999;
 
     if (isEditor()) {
       const myName = editorName();
       const myRows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.editor === myName);
       const active = myRows.filter(r => r.status && r.status !== 'Done');
       const done = myRows.filter(r => r.status === 'Done');
-      // Find the most urgent project (earliest deadline)
       const urgent = active.filter(r => r.deadline).sort((a,b) => a.deadline.localeCompare(b.deadline));
       const urgentName = urgent.length ? (urgent[0].rawFile || 'a project') : null;
       const urgentDl = urgent.length ? urgent[0].deadline : null;
       const daysLeft = urgentDl ? Math.ceil((new Date(urgentDl+'T23:59:59') - new Date())/(1000*60*60*24)) : null;
 
+      const hasOverdue = daysLeft !== null && daysLeft <= 1;
+      const hasUrgent = daysLeft !== null && daysLeft <= 3;
+      const noWork = active.length === 0;
+      const doingGood = done.length >= 3;
+
+      if (!hasOverdue && !hasUrgent && !noWork && !doingGood && daysSinceLast < 2) return;
+
       greetRole = 'editor';
-      greetPrompt = `The editor "${myName}" just logged in. They have ${active.length} active projects and ${done.length} done this period.`;
-      if (urgentName && daysLeft !== null) {
-        greetPrompt += ` Their most urgent project is "${urgentName}" due in ${daysLeft} day(s).`;
-        if (daysLeft <= 1) greetPrompt += ' THIS IS OVERDUE OR DUE TODAY — roast them about it!';
-      }
-      if (active.length === 0) greetPrompt += ' They have NOTHING active — push them to pick up work!';
-      greetPrompt += '\n\nGive a SHORT (1-2 sentence) personalized greeting. Be rude, funny, motivational. Swear in Bangla (use popular gaali like হারামি, ভোদাই, বাল, মাদারচোদ, ভোসড়ি কে, গান্ডু — uncensored. Use শালা ONLY for Sifat). Mix English + Bangla. Reference their actual situation. No generic stuff.';
+      let situation = `Editor "${myName}": ${active.length} active, ${done.length} done.`;
+      if (hasOverdue) situation += ` "${urgentName}" is DUE TODAY or OVERDUE!`;
+      else if (hasUrgent) situation += ` "${urgentName}" due in ${daysLeft} days.`;
+      if (noWork) situation += ' No active work!';
+      if (doingGood) situation += ' Crushing it this period!';
+      greetPrompt = situation + '\n\n1-2 SHORT sentences. Welcoming + Bangla swearing (হারামি, ভোদাই, বাল, মাদারচোদ, ভোসড়ি কে, গান্ডু — uncensored. শালা ONLY for Sifat). Reference their situation. If overdue, roast hard. If doing good, hype them.';
 
     } else if (isClient()) {
       const cName = clientName();
@@ -2319,10 +2326,12 @@
       const inProgress = myRows.filter(r => r.status === 'In Progress' || r.status === 'Assigned').length;
       const done = myRows.filter(r => r.status === 'Done').length;
 
-      greetRole = 'admin'; // use admin voice (polite) for clients
-      greetPrompt = `Client "${cName}" just logged in. They have ${inReview} projects waiting for their review, ${inProgress} in progress, and ${done} done.`;
-      if (inReview > 0) greetPrompt += ' Remind them to check the projects in Client Review!';
-      greetPrompt += '\n\nGive a SHORT (1 sentence) friendly, professional greeting. Mention their review queue if any.';
+      if (inReview === 0 && daysSinceLast < 2) return;
+
+      greetRole = 'admin';
+      greetPrompt = `Client "${cName}": ${inReview} to review, ${inProgress} in progress, ${done} done.`;
+      if (inReview > 0) greetPrompt += ' Remind them to check reviews!';
+      greetPrompt += '\n\n1 SHORT sentence. Friendly, professional.';
 
     } else if (isAdmin()) {
       const rows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk);
@@ -2331,10 +2340,12 @@
       const overdue = rows.filter(r => r.deadline && r.status !== 'Done' && new Date(r.deadline+'T23:59:59') < new Date()).length;
 
       greetRole = 'admin';
-      greetPrompt = `Admin just logged in. Quick status: ${active} active projects, ${done} done, ${overdue} overdue. Give a 1-sentence sharp status greeting. If overdue > 0, flag it.`;
+      greetPrompt = `Admin login. ${active} active, ${done} done, ${overdue} overdue. 1-sentence status. Flag overdue if any.`;
     } else {
       return;
     }
+
+    try { localStorage.setItem(lsKey, String(Date.now())); } catch(e) {}
 
     try {
       // For editors, include other editors' scores for jealousy
@@ -2380,8 +2391,6 @@
     overlay.appendChild(card);
     document.body.appendChild(overlay);
     requestAnimationFrame(() => { overlay.style.opacity = '1'; card.style.transform = 'scale(1)'; });
-    // Auto-dismiss after 12s
-    setTimeout(() => { if (overlay.parentNode) { overlay.style.opacity = '0'; setTimeout(() => overlay.remove(), 400); } }, 12000);
   }
 
   // ===== Editor Robot Mini-Panel =====
@@ -2793,7 +2802,7 @@
     return `<svg viewBox="0 0 96 118" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="rbShell" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#b8c8d8"/><stop offset="0.4" stop-color="#8fa5ba"/><stop offset="1" stop-color="#5a7a95"/>
+          <stop offset="0" stop-color="#d8e4ee"/><stop offset="0.4" stop-color="#b0c4d8"/><stop offset="1" stop-color="#7a9ab5"/>
         </linearGradient>
         <linearGradient id="rbVisor" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#1e2d42"/><stop offset="1" stop-color="#0d1520"/>
@@ -2826,24 +2835,24 @@
         <g class="rb-body-wrap">
         <!-- antenna -->
         <g class="rb-antenna-l">
-          <rect x="45.7" y="4" width="4.6" height="14" rx="2.3" fill="#5a7a95"/>
+          <rect x="45.7" y="4" width="4.6" height="14" rx="2.3" fill="#8fa5ba"/>
           <g class="rb-antenna-ball"><circle cx="48" cy="4" r="5" fill="#ff7a2e"/><circle cx="46.2" cy="2.4" r="1.8" fill="#ffd0a8" opacity="0.8"/></g>
         </g>
 
         <!-- ears (little round bumps for cuteness) -->
-        <circle cx="17" cy="34" r="6" fill="#7a9ab0" stroke="#5a7a95" stroke-width="1.2"/>
+        <circle cx="17" cy="34" r="6" fill="#b0c4d8" stroke="#8fa5ba" stroke-width="1.2"/>
         <circle cx="16" cy="33" r="2.2" fill="#f0c0d0" opacity="0.4"/>
-        <circle cx="79" cy="34" r="6" fill="#7a9ab0" stroke="#5a7a95" stroke-width="1.2"/>
+        <circle cx="79" cy="34" r="6" fill="#b0c4d8" stroke="#8fa5ba" stroke-width="1.2"/>
         <circle cx="80" cy="33" r="2.2" fill="#f0c0d0" opacity="0.4"/>
 
         <!-- arms (little rounded paddles) -->
-        <g class="rb-arm-l"><ellipse cx="12" cy="62" rx="8" ry="12.5" fill="#7a9ab0" transform="rotate(14 12 62)"/><ellipse cx="12" cy="71" rx="5" ry="5.5" fill="#5a7a95" transform="rotate(14 12 71)"/></g>
-        <g class="rb-arm-r"><ellipse cx="84" cy="62" rx="8" ry="12.5" fill="#7a9ab0" transform="rotate(-14 84 62)"/><ellipse cx="84" cy="71" rx="5" ry="5.5" fill="#5a7a95" transform="rotate(-14 84 71)"/></g>
+        <g class="rb-arm-l"><ellipse cx="12" cy="62" rx="8" ry="12.5" fill="#b0c4d8" transform="rotate(14 12 62)"/><ellipse cx="12" cy="71" rx="5" ry="5.5" fill="#8fa5ba" transform="rotate(14 12 71)"/></g>
+        <g class="rb-arm-r"><ellipse cx="84" cy="62" rx="8" ry="12.5" fill="#b0c4d8" transform="rotate(-14 84 62)"/><ellipse cx="84" cy="71" rx="5" ry="5.5" fill="#8fa5ba" transform="rotate(-14 84 71)"/></g>
 
         <!-- body capsule -->
         <rect x="20" y="16" width="56" height="72" rx="26" fill="url(#rbShell)" stroke="#18202e" stroke-width="2.4"/>
         <!-- belly plate -->
-        <rect x="32" y="66" width="32" height="16" rx="8" fill="#6a8da5" stroke="#5a7a95" stroke-width="1.4"/>
+        <rect x="32" y="66" width="32" height="16" rx="8" fill="#c0d4e4" stroke="#8fa5ba" stroke-width="1.4"/>
         <circle cx="40" cy="74" r="2.8" fill="#ffce4a"><animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/></circle>
         <circle cx="48" cy="74" r="2.8" fill="#67e8a0"><animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/></circle>
         <circle cx="56" cy="74" r="2.8" fill="#4a9eff"><animate attributeName="opacity" values="1;0.7;1" dur="1.5s" repeatCount="indefinite"/></circle>
