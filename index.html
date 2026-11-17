@@ -449,31 +449,60 @@
     position: fixed; width: 72px; height: 86px; z-index: 200;
     pointer-events: auto; cursor: pointer; user-select: none;
     will-change: transform; left: 0; top: 0;
-    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.35));
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,0.35));
     image-rendering: -webkit-optimize-contrast;
+  }
+  #floatRobot.rb-enter { animation: rbAppear 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  @keyframes rbAppear {
+    0% { transform: scale(0) translateY(30px); opacity:0; }
+    40% { transform: scale(1.15,0.85) translateY(-4px); opacity:1; }
+    60% { transform: scale(0.9,1.12) translateY(2px); }
+    80% { transform: scale(1.04,0.96) translateY(-1px); }
+    100% { transform: scale(1) translateY(0); opacity:1; }
   }
   #floatRobot svg { width: 100%; height: 100%; display: block; overflow: visible; }
   #floatRobot .rb-hover { animation: rbBob 3.2s ease-in-out infinite; transform-origin: 50% 50%; }
-  @keyframes rbBob { 0%,100% { transform: translateY(0) rotate(-0.5deg); } 50% { transform: translateY(-2px) rotate(0.5deg); } }
+  @keyframes rbBob { 0%,100% { transform: translateY(0) rotate(-0.5deg); } 50% { transform: translateY(-3px) rotate(0.5deg); } }
+  #floatRobot .rb-body-wrap { animation: rbBreathe 4s ease-in-out infinite; transform-origin: 48px 50px; }
+  @keyframes rbBreathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.018, 1.025); } }
   #floatRobot .rb-flame { transform-origin: 50% 0%; animation: rbFlame 0.28s ease-in-out infinite alternate; }
   @keyframes rbFlame { 0% { transform: scaleY(0.85) scaleX(1.02); opacity:0.85; } 100% { transform: scaleY(1.18) scaleX(0.9); opacity:1; } }
   #floatRobot .rb-flame2 { transform-origin: 50% 0%; animation: rbFlame2 0.4s ease-in-out infinite alternate; }
   @keyframes rbFlame2 { 0% { transform: scaleY(1.05) scaleX(0.85); opacity:0.7; } 100% { transform: scaleY(0.8) scaleX(1.0); opacity:0.92; } }
-  #floatRobot .rb-antenna-l, #adminRobot .rb-antenna-l { transform-origin: 48px 16px; animation: rbAnt 3s ease-in-out infinite; }
-  @keyframes rbAnt { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
+  #floatRobot .rb-antenna-l, #adminRobot .rb-antenna-l { transform-origin: 48px 16px; animation: rbAnt 2.6s ease-in-out infinite; }
+  @keyframes rbAnt { 0%,100%{transform:rotate(-6deg)} 30%{transform:rotate(5deg)} 70%{transform:rotate(-3deg)} }
+  #floatRobot .rb-antenna-ball { animation: rbAntGlow 2.6s ease-in-out infinite; }
+  @keyframes rbAntGlow { 0%,100%{filter:brightness(1) drop-shadow(0 0 2px #ff7a2e)} 50%{filter:brightness(1.3) drop-shadow(0 0 6px #ffb040)} }
   #floatRobot .rb-arm-l, #adminRobot .rb-arm-l { transform-origin: 16px 52px; animation: rbArmIdle 3.4s ease-in-out infinite; }
   #floatRobot .rb-arm-r, #adminRobot .rb-arm-r { transform-origin: 80px 52px; animation: rbArmIdle 3.4s ease-in-out infinite reverse; }
-  @keyframes rbArmIdle { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(6deg)} }
+  @keyframes rbArmIdle { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(8deg)} }
   #floatRobot.waving .rb-arm-r, #adminRobot.waving .rb-arm-r { animation: rbWave 0.5s ease-in-out 3; }
   @keyframes rbWave { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(-55deg)} }
   #floatRobot .rb-eye { animation: rbBlink 4s infinite; transform-origin: center; }
-  @keyframes rbBlink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(0.12); } }
+  @keyframes rbBlink { 0%,90%,100% { transform: scaleY(1); } 93% { transform: scaleY(0.08); } 96% { transform: scaleY(1); } }
+  #floatRobot .rb-eye-r { animation: rbBlink2 4s 0.6s infinite; transform-origin: center; }
+  @keyframes rbBlink2 { 0%,90%,100% { transform: scaleY(1); } 93% { transform: scaleY(0.08); } 96% { transform: scaleY(1); } }
+  #floatRobot .rb-blush { animation: rbBlush 5s ease-in-out infinite; }
+  @keyframes rbBlush { 0%,100%{opacity:0.35} 50%{opacity:0.6} }
   #floatRobot.angry .rb-hover { animation: rbShake 0.28s ease-in-out infinite; }
   @keyframes rbShake { 0%,100%{transform:translate(0,0) rotate(0)} 20%{transform:translate(-3px,1px) rotate(-5deg)} 60%{transform:translate(3px,-1px) rotate(5deg)} }
-  #floatRobot .rb-normal-face { transition: opacity 0.15s; }
-  #floatRobot .rb-angry-face { opacity: 0; transition: opacity 0.15s; }
+  #floatRobot .rb-normal-face { transition: opacity 0.2s; }
+  #floatRobot .rb-angry-face { opacity: 0; transition: opacity 0.2s; }
   #floatRobot.angry .rb-normal-face { opacity: 0; }
   #floatRobot.angry .rb-angry-face { opacity: 1; }
+  #floatRobot.rb-squish { animation: rbSquish 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes rbSquish { 0%{transform:scale(1)} 25%{transform:scale(1.15,0.85)} 50%{transform:scale(0.92,1.1)} 75%{transform:scale(1.04,0.97)} 100%{transform:scale(1)} }
+  #floatRobot .rb-think-dots { opacity: 0; transition: opacity 0.3s; }
+  #floatRobot.thinking .rb-think-dots { opacity: 1; }
+  #floatRobot .rb-think-d1 { animation: rbThinkBounce 1.2s ease-in-out infinite; }
+  #floatRobot .rb-think-d2 { animation: rbThinkBounce 1.2s ease-in-out 0.2s infinite; }
+  #floatRobot .rb-think-d3 { animation: rbThinkBounce 1.2s ease-in-out 0.4s infinite; }
+  @keyframes rbThinkBounce { 0%,100%{transform:translateY(0);opacity:0.5} 50%{transform:translateY(-5px);opacity:1} }
+  #floatRobot.happy .rb-hover { animation: rbHappyBounce 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes rbHappyBounce { 0%{transform:translateY(0) scale(1)} 30%{transform:translateY(-10px) scale(1.08)} 50%{transform:translateY(-2px) scale(0.95,1.05)} 70%{transform:translateY(-5px) scale(1.03)} 100%{transform:translateY(0) scale(1)} }
+  #floatRobot .rb-sparkle { opacity: 0; }
+  #floatRobot.happy .rb-sparkle { animation: rbSparkle 0.8s ease-out forwards; }
+  @keyframes rbSparkle { 0%{opacity:0;transform:scale(0.3)} 40%{opacity:1;transform:scale(1.1)} 100%{opacity:0;transform:scale(0.6) translateY(-10px)} }
 
   #floatRobotBubble {
     position: fixed; z-index: 201; max-width: 220px; width: max-content;
@@ -499,6 +528,21 @@
     right: 28px; bottom: 28px; cursor: pointer; user-select: none;
     will-change: transform; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
   }
+  #adminRobot.rb-enter { animation: rbAppear 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  #adminRobot.rb-squish { animation: rbSquish 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  #adminRobot .rb-body-wrap { animation: rbBreathe 4s ease-in-out infinite; transform-origin: 48px 50px; }
+  #adminRobot .rb-antenna-ball { animation: rbAntGlow 2.6s ease-in-out infinite; }
+  #adminRobot .rb-eye { animation: rbBlink 4s infinite; transform-origin: center; }
+  #adminRobot .rb-eye-r { animation: rbBlink2 4s 0.6s infinite; transform-origin: center; }
+  #adminRobot .rb-blush { animation: rbBlush 5s ease-in-out infinite; }
+  #adminRobot .rb-think-dots { opacity: 0; transition: opacity 0.3s; }
+  #adminRobot.thinking .rb-think-dots { opacity: 1; }
+  #adminRobot .rb-think-d1 { animation: rbThinkBounce 1.2s ease-in-out infinite; }
+  #adminRobot .rb-think-d2 { animation: rbThinkBounce 1.2s ease-in-out 0.2s infinite; }
+  #adminRobot .rb-think-d3 { animation: rbThinkBounce 1.2s ease-in-out 0.4s infinite; }
+  #adminRobot.happy .rb-hover { animation: rbHappyBounce 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+  #adminRobot .rb-sparkle { opacity: 0; }
+  #adminRobot.happy .rb-sparkle { animation: rbSparkle 0.8s ease-out forwards; }
   #adminRobot svg { width: 100%; height: 100%; display: block; overflow: visible; }
   #adminRobotHint {
     position: fixed; right: 100px; bottom: 48px; z-index: 199;
@@ -2393,6 +2437,8 @@
     _erMsgCount++;
     const reply = document.getElementById('erReply');
     if (reply) reply.textContent = 'Thinking…';
+    const fRobot = document.getElementById('floatRobot');
+    if (fRobot) fRobot.classList.add('thinking');
 
     try {
       const pk = activePeriodKey();
@@ -2421,8 +2467,10 @@
       });
       if (error) throw error;
       if (reply) reply.innerHTML = res.reply || 'No answer.';
+      if (fRobot) { fRobot.classList.remove('thinking'); fRobot.classList.add('happy'); setTimeout(() => fRobot.classList.remove('happy'), 700); }
     } catch(e) {
       if (reply) reply.textContent = 'Robot offline: ' + (e.message || e);
+      if (fRobot) fRobot.classList.remove('thinking');
     }
   }
 
@@ -2742,13 +2790,13 @@
   // ===== Free-floating animated robot mascot =====
   // Rounded astronaut bot: glossy helmet, expressive visor face, little arms, layered flame.
   function robotSVG() {
-    return `<svg viewBox="0 0 96 112" xmlns="http://www.w3.org/2000/svg">
+    return `<svg viewBox="0 0 96 118" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="rbShell" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#ffffff"/><stop offset="0.55" stop-color="#e6ecf4"/><stop offset="1" stop-color="#c3cfdd"/>
+          <stop offset="0" stop-color="#ffffff"/><stop offset="0.4" stop-color="#edf1f8"/><stop offset="1" stop-color="#c3cfdd"/>
         </linearGradient>
         <linearGradient id="rbVisor" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#233043"/><stop offset="1" stop-color="#111a28"/>
+          <stop offset="0" stop-color="#1e2d42"/><stop offset="1" stop-color="#0d1520"/>
         </linearGradient>
         <linearGradient id="rbFlameA" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#fff3b0"/><stop offset="0.4" stop-color="#ffb53b"/><stop offset="1" stop-color="#ff6a1a" stop-opacity="0"/>
@@ -2756,45 +2804,73 @@
         <linearGradient id="rbFlameB" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#fff8d6"/><stop offset="1" stop-color="#ffb53b" stop-opacity="0"/>
         </linearGradient>
-        <radialGradient id="rbEyeG" cx="0.5" cy="0.38" r="0.7">
-          <stop offset="0" stop-color="#c6f4ff"/><stop offset="0.45" stop-color="#3fd0ff"/><stop offset="1" stop-color="#1177c9"/>
+        <radialGradient id="rbEyeG" cx="0.5" cy="0.35" r="0.65">
+          <stop offset="0" stop-color="#d4f8ff"/><stop offset="0.4" stop-color="#3fd0ff"/><stop offset="1" stop-color="#0e6fbf"/>
         </radialGradient>
+        <radialGradient id="rbGlow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#3fd0ff" stop-opacity="0.15"/><stop offset="1" stop-color="#3fd0ff" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="rbSoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.5"/></filter>
       </defs>
 
+      <!-- soft glow behind robot -->
+      <circle cx="48" cy="52" r="42" fill="url(#rbGlow)"/>
+
       <!-- flame -->
-      <g transform="translate(48 86)">
+      <g transform="translate(48 88)">
         <g class="rb-flame2"><path d="M-10 0 Q-6 24 0 33 Q6 24 10 0 Q0 6 -10 0Z" fill="url(#rbFlameA)"/></g>
         <g class="rb-flame"><path d="M-5.5 0 Q-3 15 0 21 Q3 15 5.5 0 Q0 4 -5.5 0Z" fill="url(#rbFlameB)"/></g>
       </g>
 
       <g class="rb-hover">
+        <g class="rb-body-wrap">
         <!-- antenna -->
-        <g class="rb-antenna-l"><rect x="45.7" y="4" width="4.6" height="14" rx="2.3" fill="#c3cfdd"/><circle cx="48" cy="4" r="4.6" fill="#ff7a2e"/><circle cx="46.5" cy="2.6" r="1.5" fill="#ffd0a8"/></g>
+        <g class="rb-antenna-l">
+          <rect x="45.7" y="4" width="4.6" height="14" rx="2.3" fill="#c3cfdd"/>
+          <g class="rb-antenna-ball"><circle cx="48" cy="4" r="5" fill="#ff7a2e"/><circle cx="46.2" cy="2.4" r="1.8" fill="#ffd0a8" opacity="0.8"/></g>
+        </g>
+
+        <!-- ears (little round bumps for cuteness) -->
+        <circle cx="17" cy="34" r="6" fill="#dde5ee" stroke="#c3cfdd" stroke-width="1.2"/>
+        <circle cx="16" cy="33" r="2.2" fill="#f0c0d0" opacity="0.4"/>
+        <circle cx="79" cy="34" r="6" fill="#dde5ee" stroke="#c3cfdd" stroke-width="1.2"/>
+        <circle cx="80" cy="33" r="2.2" fill="#f0c0d0" opacity="0.4"/>
 
         <!-- arms (little rounded paddles) -->
-        <g class="rb-arm-l"><ellipse cx="14" cy="62" rx="7.5" ry="12" fill="#dde5ee" transform="rotate(16 14 62)"/><ellipse cx="14" cy="70" rx="4.6" ry="5" fill="#b9c6d6" transform="rotate(16 14 70)"/></g>
-        <g class="rb-arm-r"><ellipse cx="82" cy="62" rx="7.5" ry="12" fill="#dde5ee" transform="rotate(-16 82 62)"/><ellipse cx="82" cy="70" rx="4.6" ry="5" fill="#b9c6d6" transform="rotate(-16 82 70)"/></g>
+        <g class="rb-arm-l"><ellipse cx="12" cy="62" rx="8" ry="12.5" fill="#dde5ee" transform="rotate(14 12 62)"/><ellipse cx="12" cy="71" rx="5" ry="5.5" fill="#b9c6d6" transform="rotate(14 12 71)"/></g>
+        <g class="rb-arm-r"><ellipse cx="84" cy="62" rx="8" ry="12.5" fill="#dde5ee" transform="rotate(-14 84 62)"/><ellipse cx="84" cy="71" rx="5" ry="5.5" fill="#b9c6d6" transform="rotate(-14 84 71)"/></g>
 
         <!-- body capsule -->
         <rect x="20" y="16" width="56" height="72" rx="26" fill="url(#rbShell)" stroke="#18202e" stroke-width="2.4"/>
         <!-- belly plate -->
         <rect x="32" y="66" width="32" height="16" rx="8" fill="#eef2f7" stroke="#c3cfdd" stroke-width="1.4"/>
-        <circle cx="40" cy="74" r="2.6" fill="#ffce4a"/>
-        <circle cx="48" cy="74" r="2.6" fill="#67e8a0"/>
-        <circle cx="56" cy="74" r="2.6" fill="#4a9eff"/>
+        <circle cx="40" cy="74" r="2.8" fill="#ffce4a"><animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/></circle>
+        <circle cx="48" cy="74" r="2.8" fill="#67e8a0"><animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/></circle>
+        <circle cx="56" cy="74" r="2.8" fill="#4a9eff"><animate attributeName="opacity" values="1;0.7;1" dur="1.5s" repeatCount="indefinite"/></circle>
 
         <!-- visor -->
         <rect x="27" y="26" width="42" height="34" rx="15" fill="url(#rbVisor)" stroke="#0b1220" stroke-width="2"/>
         <!-- visor sheen -->
-        <path d="M32 32 Q40 27 58 29 Q46 31 35 38 Q32 36 32 32Z" fill="#ffffff" opacity="0.14"/>
+        <path d="M32 32 Q40 27 58 29 Q46 31 35 38 Q32 36 32 32Z" fill="#ffffff" opacity="0.12"/>
 
         <!-- NORMAL face -->
         <g class="rb-normal-face">
-          <g class="rb-eye"><ellipse cx="40" cy="43" rx="5.4" ry="7" fill="url(#rbEyeG)"/><circle cx="38.4" cy="40.4" r="1.9" fill="#ffffff"/></g>
-          <g class="rb-eye"><ellipse cx="56" cy="43" rx="5.4" ry="7" fill="url(#rbEyeG)"/><circle cx="54.4" cy="40.4" r="1.9" fill="#ffffff"/></g>
-          <path d="M43 53.5 Q48 57.5 53 53.5" stroke="#3fd0ff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-          <ellipse cx="33.5" cy="49" rx="2.6" ry="1.7" fill="#ff8fb0" opacity="0.5"/>
-          <ellipse cx="62.5" cy="49" rx="2.6" ry="1.7" fill="#ff8fb0" opacity="0.5"/>
+          <!-- eyes with pupils that can track (JS moves rb-pupil-l/r) -->
+          <g class="rb-eye">
+            <ellipse cx="40" cy="43" rx="5.8" ry="7.2" fill="url(#rbEyeG)"/>
+            <circle class="rb-pupil rb-pupil-l" cx="40" cy="42.5" r="2.8" fill="#0a1829"/>
+            <circle cx="38.2" cy="40.2" r="2" fill="#ffffff" opacity="0.85"/>
+          </g>
+          <g class="rb-eye rb-eye-r">
+            <ellipse cx="56" cy="43" rx="5.8" ry="7.2" fill="url(#rbEyeG)"/>
+            <circle class="rb-pupil rb-pupil-r" cx="56" cy="42.5" r="2.8" fill="#0a1829"/>
+            <circle cx="54.2" cy="40.2" r="2" fill="#ffffff" opacity="0.85"/>
+          </g>
+          <!-- smile -->
+          <path d="M42 53.5 Q48 58 54 53.5" stroke="#3fd0ff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+          <!-- blush cheeks -->
+          <ellipse class="rb-blush" cx="33" cy="49" rx="3" ry="2" fill="#ff8fb0" opacity="0.35"/>
+          <ellipse class="rb-blush" cx="63" cy="49" rx="3" ry="2" fill="#ff8fb0" opacity="0.35"/>
         </g>
 
         <!-- ANGRY face -->
@@ -2807,8 +2883,24 @@
           <path d="M41 54.5 Q48 49 55 54.5 Q48 52.5 41 54.5Z" fill="#ff8c1a" stroke="#d65a00" stroke-width="1"/>
         </g>
 
+        <!-- thinking dots (shown when waiting for API) -->
+        <g class="rb-think-dots" transform="translate(48, 2)">
+          <circle class="rb-think-d1" cx="-8" cy="0" r="2.5" fill="#3fd0ff" opacity="0.5"/>
+          <circle class="rb-think-d2" cx="0" cy="0" r="2.5" fill="#3fd0ff" opacity="0.5"/>
+          <circle class="rb-think-d3" cx="8" cy="0" r="2.5" fill="#3fd0ff" opacity="0.5"/>
+        </g>
+
+        <!-- sparkle particles (shown on happy state) -->
+        <g class="rb-sparkle" transform="translate(48, 30)">
+          <circle cx="-22" cy="-8" r="1.5" fill="#ffce4a"/>
+          <circle cx="22" cy="-5" r="1.2" fill="#67e8a0"/>
+          <circle cx="-18" cy="10" r="1" fill="#4a9eff"/>
+          <circle cx="20" cy="12" r="1.4" fill="#ff8fb0"/>
+        </g>
+
         <!-- shell shine -->
-        <ellipse cx="31" cy="24" rx="8" ry="4.4" fill="#fff" opacity="0.6" transform="rotate(-28 31 24)"/>
+        <ellipse cx="31" cy="24" rx="8" ry="4.4" fill="#fff" opacity="0.55" transform="rotate(-28 31 24)"/>
+        </g>
       </g>
     </svg>`;
   }
@@ -2903,8 +2995,17 @@
     robotState.y = b ? b.top + 10 : window.innerHeight - 250;
     robotState.tx = robotState.x;
     robotState.ty = robotState.y;
-    // Apply initial transform immediately so it's visible on first paint
     el.style.transform = `translate(${robotState.x}px, ${robotState.y}px)`;
+    // Squash & stretch entrance animation
+    el.classList.add('rb-enter');
+    setTimeout(() => el.classList.remove('rb-enter'), 800);
+    // Squish on click
+    el.addEventListener('click', () => {
+      el.classList.remove('rb-squish');
+      void el.offsetWidth;
+      el.classList.add('rb-squish');
+      setTimeout(() => el.classList.remove('rb-squish'), 500);
+    });
 
     // Mouse awareness handler — store cursor pos; reactions happen in stepRobot
     if (!window._robotCursorHandler) {
@@ -2993,6 +3094,14 @@
     el.innerHTML = robotSVG();
     el.title = 'Click for a team summary';
     el.addEventListener('click', openAdminSummary);
+    el.classList.add('rb-enter');
+    setTimeout(() => el.classList.remove('rb-enter'), 800);
+    el.addEventListener('click', () => {
+      el.classList.remove('rb-squish');
+      void el.offsetWidth;
+      el.classList.add('rb-squish');
+      setTimeout(() => el.classList.remove('rb-squish'), 500);
+    });
     document.body.appendChild(el);
     const hint = document.createElement('div');
     hint.id = 'adminRobotHint';
@@ -3033,6 +3142,31 @@
       s.oy += ((s.targetOy||0) - s.oy) * 0.08;
       const tilt = s.ox * 0.6;
       s.el.style.transform = `translate(${(s.ox+floatX).toFixed(2)}px, ${(s.oy+floatY).toFixed(2)}px) rotate(${tilt.toFixed(2)}deg)`;
+      // Eye tracking for admin robot
+      const svg = s.el.querySelector('svg');
+      if (svg && s.targetOx !== undefined) {
+        const rect = s.el.getBoundingClientRect();
+        const sc = rect.width / 96;
+        const mx = rect.left + rect.width/2 + (s.targetOx||0) * 8;
+        const my = rect.top + rect.height * 0.4 + (s.targetOy||0) * 8;
+        const maxS = 2.2;
+        const pl = svg.querySelector('.rb-pupil-l');
+        const pr = svg.querySelector('.rb-pupil-r');
+        if (pl) {
+          const ex = rect.left + 40*sc, ey = rect.top + 43*sc;
+          const d = Math.hypot(mx-ex, my-ey)||1;
+          const sh = Math.min(maxS, d/(50*sc)*maxS);
+          pl.setAttribute('cx', (40+(mx-ex)/d*sh).toFixed(2));
+          pl.setAttribute('cy', (42.5+(my-ey)/d*sh).toFixed(2));
+        }
+        if (pr) {
+          const ex = rect.left + 56*sc, ey = rect.top + 43*sc;
+          const d = Math.hypot(mx-ex, my-ey)||1;
+          const sh = Math.min(maxS, d/(50*sc)*maxS);
+          pr.setAttribute('cx', (56+(mx-ex)/d*sh).toFixed(2));
+          pr.setAttribute('cy', (42.5+(my-ey)/d*sh).toFixed(2));
+        }
+      }
       s.raf = requestAnimationFrame(loop);
     };
     adminRobotState.raf = requestAnimationFrame(loop);
@@ -3224,6 +3358,8 @@
     const q = input && input.value.trim();
     if (!q || !out) return;
     out.textContent = 'Thinking…';
+    const aRobot = document.getElementById('adminRobot');
+    if (aRobot) aRobot.classList.add('thinking');
     try {
       const pk = activePeriodKey();
       const rows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk).map(r => ({
@@ -3235,8 +3371,10 @@
       if (error) throw error;
       window._robotLast = res.reply || res.error || 'No answer.';
       out.innerHTML = window._robotLast;
+      if (aRobot) { aRobot.classList.remove('thinking'); aRobot.classList.add('happy'); setTimeout(() => aRobot.classList.remove('happy'), 700); }
     } catch (e) {
       out.textContent = 'Robot offline: ' + (e.message || e);
+      if (aRobot) aRobot.classList.remove('thinking');
     }
   }
 
@@ -3305,6 +3443,27 @@
       s.bubble.style.left = (s.x + 36 - s.bubble.offsetWidth/2) + 'px';
       s.bubble.style.top = (s.y - s.bubble.offsetHeight - 8) + 'px';
     }
+    // Eye tracking — pupils follow cursor
+    if (s.mouseSeen && s.el && !s.angry) {
+      const svg = s.el.querySelector('svg');
+      if (svg) {
+        const rect = s.el.getBoundingClientRect();
+        const scale = rect.width / 96;
+        const eyeLx = rect.left + 40 * scale, eyeLy = rect.top + 43 * scale;
+        const eyeRx = rect.left + 56 * scale, eyeRy = rect.top + 43 * scale;
+        const maxShift = 2.5;
+        const lDx = s.mouseX - eyeLx, lDy = s.mouseY - eyeLy;
+        const lD = Math.hypot(lDx, lDy) || 1;
+        const lShift = Math.min(maxShift, lD / 50 * maxShift);
+        const rDx = s.mouseX - eyeRx, rDy = s.mouseY - eyeRy;
+        const rD = Math.hypot(rDx, rDy) || 1;
+        const rShift = Math.min(maxShift, rD / 50 * maxShift);
+        const pl = svg.querySelector('.rb-pupil-l');
+        const pr = svg.querySelector('.rb-pupil-r');
+        if (pl) { pl.setAttribute('cx', (40 + (lDx/lD)*lShift).toFixed(2)); pl.setAttribute('cy', (42.5 + (lDy/lD)*lShift).toFixed(2)); }
+        if (pr) { pr.setAttribute('cx', (56 + (rDx/rD)*rShift).toFixed(2)); pr.setAttribute('cy', (42.5 + (rDy/rD)*rShift).toFixed(2)); }
+      }
+    }
   }
 
   function showRobotBubble(text, angry, duration) {
@@ -3316,6 +3475,13 @@
     // Position immediately
     s.bubble.style.left = (s.x + 36 - s.bubble.offsetWidth/2) + 'px';
     s.bubble.style.top = (s.y - s.bubble.offsetHeight - 8) + 'px';
+    // Happy bounce when showing a message
+    if (!angry && s.el) {
+      s.el.classList.remove('happy');
+      void s.el.offsetWidth;
+      s.el.classList.add('happy');
+      setTimeout(() => { if (s.el) s.el.classList.remove('happy'); }, 700);
+    }
     clearTimeout(s._bubbleHide);
     s._bubbleHide = setTimeout(() => { if (s.bubble) s.bubble.classList.remove('show'); }, duration || 6000);
   }
