@@ -484,31 +484,31 @@
   @keyframes rbBlink2 { 0%,90%,100% { transform: scaleY(1); } 93% { transform: scaleY(0.08); } 96% { transform: scaleY(1); } }
   #floatRobot .rb-blush { animation: rbBlush 5s ease-in-out infinite; }
   @keyframes rbBlush { 0%,100%{opacity:0.35} 50%{opacity:0.6} }
-  #floatRobot.angry .rb-hover { animation: rbShake 0.28s ease-in-out infinite; }
-  @keyframes rbShake { 0%,100%{transform:translate(0,0) rotate(0)} 20%{transform:translate(-3px,1px) rotate(-5deg)} 60%{transform:translate(3px,-1px) rotate(5deg)} }
+  #floatRobot.angry .rb-hover { animation: rbShake 0.35s ease-in-out infinite; }
+  @keyframes rbShake { 0%,100%{transform:translate(0,0) rotate(0)} 30%{transform:translate(-2px,0) rotate(-3deg)} 70%{transform:translate(2px,0) rotate(3deg)} }
   #floatRobot .rb-normal-face { transition: opacity 0.2s; }
   #floatRobot .rb-angry-face { opacity: 0; transition: opacity 0.2s; }
   #floatRobot.angry .rb-normal-face { opacity: 0; }
   #floatRobot.angry .rb-angry-face { opacity: 1; }
-  #floatRobot.rb-squish { animation: rbSquish 0.4s cubic-bezier(0.34,1.56,0.64,1); }
-  @keyframes rbSquish { 0%{transform:scale(1)} 25%{transform:scale(1.15,0.85)} 50%{transform:scale(0.92,1.1)} 75%{transform:scale(1.04,0.97)} 100%{transform:scale(1)} }
+  #floatRobot.rb-squish { animation: rbSquish 0.3s ease-out; }
+  @keyframes rbSquish { 0%{transform:scale(1)} 30%{transform:scale(1.06,0.94)} 60%{transform:scale(0.97,1.03)} 100%{transform:scale(1)} }
   #floatRobot .rb-think-dots { opacity: 0; transition: opacity 0.3s; }
   #floatRobot.thinking .rb-think-dots { opacity: 1; }
   #floatRobot .rb-think-d1 { animation: rbThinkBounce 1.2s ease-in-out infinite; }
   #floatRobot .rb-think-d2 { animation: rbThinkBounce 1.2s ease-in-out 0.2s infinite; }
   #floatRobot .rb-think-d3 { animation: rbThinkBounce 1.2s ease-in-out 0.4s infinite; }
   @keyframes rbThinkBounce { 0%,100%{transform:translateY(0);opacity:0.5} 50%{transform:translateY(-5px);opacity:1} }
-  #floatRobot.happy .rb-hover { animation: rbHappyBounce 0.6s cubic-bezier(0.34,1.56,0.64,1); }
-  @keyframes rbHappyBounce { 0%{transform:translateY(0) scale(1)} 30%{transform:translateY(-10px) scale(1.08)} 50%{transform:translateY(-2px) scale(0.95,1.05)} 70%{transform:translateY(-5px) scale(1.03)} 100%{transform:translateY(0) scale(1)} }
+  #floatRobot.happy .rb-hover { animation: rbHappyBounce 0.5s ease-out; }
+  @keyframes rbHappyBounce { 0%{transform:translateY(0) scale(1)} 40%{transform:translateY(-5px) scale(1.03)} 100%{transform:translateY(0) scale(1)} }
   #floatRobot .rb-sparkle { opacity: 0; }
   #floatRobot.happy .rb-sparkle { animation: rbSparkle 0.8s ease-out forwards; }
   @keyframes rbSparkle { 0%{opacity:0;transform:scale(0.3)} 40%{opacity:1;transform:scale(1.1)} 100%{opacity:0;transform:scale(0.6) translateY(-10px)} }
 
   #floatRobotBubble {
-    position: fixed; z-index: 201; max-width: 220px; width: max-content;
+    position: fixed; z-index: 201; max-width: 180px; width: max-content;
     background: var(--text); color: #052e20;
-    font-size: 11.5px; font-weight: 600; line-height: 1.35;
-    padding: 9px 13px; border-radius: 12px; text-align: center;
+    font-size: 14px; font-weight: 700; line-height: 1.3;
+    padding: 10px 14px; border-radius: 12px; text-align: center;
     box-shadow: var(--shadow-md);
     opacity: 0; pointer-events: none; transform: scale(0.9);
     transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out);
@@ -2391,13 +2391,23 @@
   }
 
   // ===== Editor Robot Mini-Panel =====
-  let _erMsgCount = 0;
-  const _ER_MAX_MSGS = 10;
+  const _ER_MAX_MSGS = 5;
+  function _erGetDailyCount() {
+    try {
+      const stored = JSON.parse(localStorage.getItem('er_msg_count') || '{}');
+      const today = new Date().toISOString().slice(0, 10);
+      if (stored.date !== today) return 0;
+      return stored.count || 0;
+    } catch { return 0; }
+  }
+  function _erIncrementCount() {
+    const today = new Date().toISOString().slice(0, 10);
+    try { localStorage.setItem('er_msg_count', JSON.stringify({ date: today, count: _erGetDailyCount() + 1 })); } catch {}
+  }
+  let _erMsgCount = _erGetDailyCount();
   const _ER_MAX_CHARS = 100;
   const _ER_PRESETS = [
-    { label: "❓ What's next?", q: "What should I work on next? Prioritize by deadline." },
-    { label: "⏰ My deadlines", q: "List my upcoming deadlines, soonest first." },
-    { label: "💪 How am I doing?", q: "How am I doing this period? Points, done vs active." },
+    { label: "💪 How am I doing?", q: "How am I doing this period? Done vs active projects." },
     { label: "🔥 Motivate me", q: "Give me a kick in the ass to keep editing. Swear in Bangla." },
   ];
 
@@ -2441,6 +2451,7 @@
     if (inp && !presetQ) inp.value = '';
 
     _erMsgCount++;
+    _erIncrementCount();
     const reply = document.getElementById('erReply');
     if (reply) reply.textContent = 'Thinking…';
     const fRobot = document.getElementById('floatRobot');
@@ -2450,19 +2461,22 @@
       const pk = activePeriodKey();
       const myName = editorName();
       const myRows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.editor === myName);
+      const blackout = isCompetitionBlackout();
       const crmSnap = myRows.map(r => ({
-        status: r.status, deadline: r.deadline, revenue: r.revenue, points: r.points,
+        status: r.status, deadline: r.deadline, revenue: r.revenue,
+        points: blackout ? '(hidden — final week)' : r.points,
         file: r.rawFile ? r.rawFile.substring(0, 60) : ''
       }));
-      // Include other editors' points for competitive comparison
-      const allRows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.editor);
       const otherEditors = {};
-      allRows.forEach(r => {
-        if (r.editor === myName) return;
-        if (!otherEditors[r.editor]) otherEditors[r.editor] = { done: 0, active: 0, points: 0 };
-        if (r.status === 'Done') { otherEditors[r.editor].done++; otherEditors[r.editor].points += (r.points != null ? Number(r.points) : 0); }
-        else otherEditors[r.editor].active++;
-      });
+      if (!blackout) {
+        const allRows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.editor);
+        allRows.forEach(r => {
+          if (r.editor === myName) return;
+          if (!otherEditors[r.editor]) otherEditors[r.editor] = { done: 0, active: 0, points: 0 };
+          if (r.status === 'Done') { otherEditors[r.editor].done++; otherEditors[r.editor].points += (r.points != null ? Number(r.points) : 0); }
+          else otherEditors[r.editor].active++;
+        });
+      }
 
       const { data: res, error } = await db.functions.invoke('ai-robot', {
         body: {
@@ -2927,34 +2941,22 @@
   const robotMotivation = { headline: '', msg: '' };
 
   const robotIdleMsgs = [
-    "Pssst... check your pipeline.",
-    "Your teammates are watching 👀",
-    "Every point counts, you know.",
-    "Go finish something already 💪",
-    "Tick tock... deadlines!",
-    "I believe in you. Mostly.",
-    "Less scrolling, more editing!",
-    "Render while you can 🎬",
-    "One more export, let's go!",
-    "That timeline won't cut itself.",
-    "Coffee break's over, champ ☕",
-    "Ship it. Then perfect it.",
-    "Your rival team just finished one 😳",
-    "Points now, flex later 😎",
-    "I'd edit it myself but... no hands.",
-    "Deadline said hi. It's getting closer.",
-    "First place looks good on you 🏆",
+    "কাজ কর ভোদাই 😤",
+    "হারামি, render দে",
+    "ডেডলাইন আসতেছে বাল",
+    "export মার শালা",
+    "কাজ কর গান্ডু 💀",
+    "timeline কাট মাদারচোদ",
+    "বস দেখতেছে 👀",
+    "point চাই হারামি",
+    "চল কাজে লাগ বাল",
   ];
   const robotAngryMsgs = [
-    "Fuck off! 😠",
-    "Don't touch me!",
-    "Back off, idiot!",
-    "Hands off! 💢",
-    "Piss off!",
-    "Get lost! 😤",
-    "Stop it, dumbass!",
-    "Leave me alone!",
-    "Quit it, loser!",
+    "হাত সরা মাদারচোদ! 😠",
+    "ধর না ভোদাই! 💢",
+    "দূর হ গান্ডু! 😤",
+    "বাল ছোঁ না!",
+    "হারামি সরে যা!",
   ];
 
   function getPulseBounds() {
