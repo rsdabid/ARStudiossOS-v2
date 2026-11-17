@@ -1012,6 +1012,30 @@
   .leader-star.active { color: var(--gold); }
   .leader-star:hover { color: var(--gold); }
 
+  /* Editor robot mini-panel */
+  #editorRobotPanel {
+    position: fixed; bottom: 20px; right: 20px; z-index: 10001;
+    width: 300px; background: var(--card, #0d1f16); border: 1px solid var(--border, #1a3328);
+    border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); display: none;
+    overflow: hidden; font-family: var(--font-ui);
+  }
+  #editorRobotPanel.show { display: block; animation: erSlide 0.3s ease-out; }
+  @keyframes erSlide { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+  .er-header { display:flex; align-items:center; gap:8px; padding:12px 14px; border-bottom:1px solid var(--border, #1a3328); }
+  .er-header span { font-size:13px; font-weight:700; color:var(--text, #e8efe4); }
+  .er-close { margin-left:auto; cursor:pointer; font-size:16px; color:var(--text-muted); }
+  .er-body { padding:10px 12px; max-height:200px; overflow-y:auto; }
+  .er-reply { font-size:12px; color:var(--text-dim, #8aa3b0); line-height:1.5; margin-bottom:8px; min-height:18px; }
+  .er-presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .er-preset { padding:6px 10px; border-radius:8px; border:1px solid var(--border, #1a3328); background:rgba(5,13,10,0.4);
+    color:var(--text, #e8efe4); font-size:11px; cursor:pointer; transition: background 0.15s; }
+  .er-preset:hover { background: rgba(94,231,176,0.1); }
+  .er-input-row { display:flex; gap:6px; padding:8px 12px; border-top:1px solid var(--border, #1a3328); }
+  .er-input-row input { flex:1; min-width:0; padding:7px 9px; border-radius:8px; border:1px solid var(--border, #1a3328);
+    background:rgba(5,13,10,0.4); color:var(--text); font-size:11px; }
+  .er-input-row button { padding:7px 10px; border-radius:8px; border:0; background:var(--green, #5EE7B0); color:#04120c;
+    font-weight:700; font-size:11px; cursor:pointer; }
+
 </style>
 </head>
 <body>
@@ -2218,6 +2242,190 @@
   function isClient() { return session && session.role === 'client'; }
   function editorName() { return session && session.editorName ? session.editorName : ''; }
   function clientName() { return session && session.clientName ? session.clientName : ''; }
+  // ===== Robot login greeting (AI-powered) =====
+  async function robotLoginGreeting() {
+    // Build context about this user
+    const pk = activePeriodKey();
+    let greetPrompt, greetRole;
+
+    if (isEditor()) {
+      const myName = editorName();
+      const myRows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.editor === myName);
+      const active = myRows.filter(r => r.status && r.status !== 'Done');
+      const done = myRows.filter(r => r.status === 'Done');
+      // Find the most urgent project (earliest deadline)
+      const urgent = active.filter(r => r.deadline).sort((a,b) => a.deadline.localeCompare(b.deadline));
+      const urgentName = urgent.length ? (urgent[0].rawFile || 'a project') : null;
+      const urgentDl = urgent.length ? urgent[0].deadline : null;
+      const daysLeft = urgentDl ? Math.ceil((new Date(urgentDl+'T23:59:59') - new Date())/(1000*60*60*24)) : null;
+
+      greetRole = 'editor';
+      greetPrompt = `The editor "${myName}" just logged in. They have ${active.length} active projects and ${done.length} done this period.`;
+      if (urgentName && daysLeft !== null) {
+        greetPrompt += ` Their most urgent project is "${urgentName}" due in ${daysLeft} day(s).`;
+        if (daysLeft <= 1) greetPrompt += ' THIS IS OVERDUE OR DUE TODAY — roast them about it!';
+      }
+      if (active.length === 0) greetPrompt += ' They have NOTHING active — push them to pick up work!';
+      greetPrompt += '\n\nGive a SHORT (1-2 sentence) personalized greeting. Be rude, funny, motivational. Swear in Bangla (use popular gaali like হারামি, ভোদাই, বাল, মাদারচোদ, ভোসড়ি কে, গান্ডু — uncensored. Use শালা ONLY for Sifat). Mix English + Bangla. Reference their actual situation. No generic stuff.';
+
+    } else if (isClient()) {
+      const cName = clientName();
+      const myRows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.client === cName);
+      const inReview = myRows.filter(r => r.status === 'Client Review').length;
+      const inProgress = myRows.filter(r => r.status === 'In Progress' || r.status === 'Assigned').length;
+      const done = myRows.filter(r => r.status === 'Done').length;
+
+      greetRole = 'admin'; // use admin voice (polite) for clients
+      greetPrompt = `Client "${cName}" just logged in. They have ${inReview} projects waiting for their review, ${inProgress} in progress, and ${done} done.`;
+      if (inReview > 0) greetPrompt += ' Remind them to check the projects in Client Review!';
+      greetPrompt += '\n\nGive a SHORT (1 sentence) friendly, professional greeting. Mention their review queue if any.';
+
+    } else if (isAdmin()) {
+      const rows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk);
+      const active = rows.filter(r => r.status && r.status !== 'Done').length;
+      const done = rows.filter(r => r.status === 'Done').length;
+      const overdue = rows.filter(r => r.deadline && r.status !== 'Done' && new Date(r.deadline+'T23:59:59') < new Date()).length;
+
+      greetRole = 'admin';
+      greetPrompt = `Admin just logged in. Quick status: ${active} active projects, ${done} done, ${overdue} overdue. Give a 1-sentence sharp status greeting. If overdue > 0, flag it.`;
+    } else {
+      return;
+    }
+
+    try {
+      // For editors, include other editors' scores for jealousy
+      let greetCrmData = null;
+      if (isEditor()) {
+        const pk = activePeriodKey();
+        const allRows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.editor);
+        const otherEditors = {};
+        allRows.forEach(r => {
+          if (r.editor === editorName()) return;
+          if (!otherEditors[r.editor]) otherEditors[r.editor] = { done: 0, active: 0, points: 0 };
+          if (r.status === 'Done') { otherEditors[r.editor].done++; otherEditors[r.editor].points += (r.points != null ? Number(r.points) : 0); }
+          else otherEditors[r.editor].active++;
+        });
+        greetCrmData = { otherEditors };
+      }
+      const { data: res, error } = await db.functions.invoke('ai-robot', {
+        body: { message: greetPrompt, role: greetRole, crmData: greetCrmData }
+      });
+      if (error) throw error;
+      const reply = res.reply || res.error;
+      if (reply) showLoginGreeting(reply, isEditor());
+    } catch(e) {
+      console.warn('Robot greeting failed:', e);
+      // Fallback: show a static message
+      if (isEditor()) showLoginGreeting("Get to work, " + editorName() + "! Those deadlines ain't gonna meet themselves 💪", true);
+    }
+  }
+
+  function showLoginGreeting(text, isRude) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(4,18,12,0.85);backdrop-filter:blur(8px);opacity:0;transition:opacity 0.4s';
+    const card = document.createElement('div');
+    card.style.cssText = 'max-width:420px;padding:32px 28px;border-radius:20px;text-align:center;transform:scale(0.8);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);'
+      + (isRude ? 'background:linear-gradient(135deg,#1a0a0a,#2a1515);border:1px solid rgba(255,80,80,0.3);' : 'background:linear-gradient(135deg,#0a1a15,#152a20);border:1px solid rgba(94,231,176,0.3);');
+    card.innerHTML = `
+      <div style="font-size:48px;margin-bottom:12px">${robotSVG().replace(/width="[^"]*"/, 'width="80"').replace(/height="[^"]*"/, 'height="80"')}</div>
+      <div style="font-size:14px;line-height:1.6;color:var(--text,#e8efe4);margin-bottom:20px">${text}</div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px 28px;border-radius:10px;border:0;font-weight:700;font-size:13px;cursor:pointer;${isRude ? 'background:#ff5050;color:#fff' : 'background:var(--green,#5EE7B0);color:#04120c'}">
+        ${isRude ? "Yeah yeah, I'm on it 🙄" : "Let's go! 🚀"}
+      </button>
+    `;
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; card.style.transform = 'scale(1)'; });
+    // Auto-dismiss after 12s
+    setTimeout(() => { if (overlay.parentNode) { overlay.style.opacity = '0'; setTimeout(() => overlay.remove(), 400); } }, 12000);
+  }
+
+  // ===== Editor Robot Mini-Panel =====
+  let _erMsgCount = 0;
+  const _ER_MAX_MSGS = 10;
+  const _ER_MAX_CHARS = 100;
+  const _ER_PRESETS = [
+    { label: "❓ What's next?", q: "What should I work on next? Prioritize by deadline." },
+    { label: "⏰ My deadlines", q: "List my upcoming deadlines, soonest first." },
+    { label: "💪 How am I doing?", q: "How am I doing this period? Points, done vs active." },
+    { label: "🔥 Motivate me", q: "Give me a kick in the ass to keep editing. Swear in Bangla." },
+  ];
+
+  function openEditorRobot() {
+    let panel = document.getElementById('editorRobotPanel');
+    if (panel) { panel.classList.toggle('show'); return; }
+    panel = document.createElement('div');
+    panel.id = 'editorRobotPanel';
+    const presetBtns = _ER_PRESETS.map((p,i) => `<div class="er-preset" onclick="editorRobotAsk(_ER_PRESETS[${i}].q)">${p.label}</div>`).join('');
+    panel.innerHTML = `
+      <div class="er-header">
+        <span>🤖 Robot</span>
+        <span class="er-close" onclick="document.getElementById('editorRobotPanel').classList.remove('show')">✕</span>
+      </div>
+      <div class="er-body">
+        <div class="er-reply" id="erReply">Tap a button or type something short.</div>
+        <div class="er-presets" id="erPresets">${presetBtns}</div>
+      </div>
+      <div class="er-input-row">
+        <input id="erInput" maxlength="${_ER_MAX_CHARS}" placeholder="Ask something short..." onkeydown="if(event.key==='Enter')editorRobotAsk()">
+        <button onclick="editorRobotAsk()">Ask</button>
+      </div>
+    `;
+    document.body.appendChild(panel);
+    requestAnimationFrame(() => panel.classList.add('show'));
+  }
+
+  async function editorRobotAsk(presetQ) {
+    if (_erMsgCount >= _ER_MAX_MSGS) {
+      const reply = document.getElementById('erReply');
+      if (reply) reply.textContent = "I'm tired. Come back tomorrow 😴";
+      const inp = document.getElementById('erInput');
+      if (inp) inp.disabled = true;
+      document.querySelectorAll('.er-preset').forEach(b => { b.style.opacity = '0.4'; b.style.pointerEvents = 'none'; });
+      return;
+    }
+    const inp = document.getElementById('erInput');
+    const q = presetQ || (inp && inp.value.trim());
+    if (!q) return;
+    if (!presetQ && q.length > _ER_MAX_CHARS) return;
+    if (inp && !presetQ) inp.value = '';
+
+    _erMsgCount++;
+    const reply = document.getElementById('erReply');
+    if (reply) reply.textContent = 'Thinking…';
+
+    try {
+      const pk = activePeriodKey();
+      const myName = editorName();
+      const myRows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.editor === myName);
+      const crmSnap = myRows.map(r => ({
+        status: r.status, deadline: r.deadline, revenue: r.revenue, points: r.points,
+        file: r.rawFile ? r.rawFile.substring(0, 60) : ''
+      }));
+      // Include other editors' points for competitive comparison
+      const allRows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk && r.editor);
+      const otherEditors = {};
+      allRows.forEach(r => {
+        if (r.editor === myName) return;
+        if (!otherEditors[r.editor]) otherEditors[r.editor] = { done: 0, active: 0, points: 0 };
+        if (r.status === 'Done') { otherEditors[r.editor].done++; otherEditors[r.editor].points += (r.points != null ? Number(r.points) : 0); }
+        else otherEditors[r.editor].active++;
+      });
+
+      const { data: res, error } = await db.functions.invoke('ai-robot', {
+        body: {
+          message: `Editor "${myName}" asks: ${q}`,
+          role: 'editor',
+          crmData: { editor: myName, period: pk, projects: crmSnap, otherEditors }
+        }
+      });
+      if (error) throw error;
+      if (reply) reply.innerHTML = res.reply || 'No answer.';
+    } catch(e) {
+      if (reply) reply.textContent = 'Robot offline: ' + (e.message || e);
+    }
+  }
+
   function showApp() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
@@ -2246,6 +2454,8 @@
       if (arb) arb.style.display = 'none';
     } else if (isEditor()) {
       document.getElementById('userBadge').textContent = '✂️ ' + editorName();
+      // Start the float robot for editors (clickable for quick questions)
+      setTimeout(() => startFloatRobot(), 1500);
       document.getElementById('financeTab').style.display = 'none';
       document.getElementById('clientsTab').style.display = 'none';
       if (leadsTab) leadsTab.style.display = 'none';
@@ -2279,6 +2489,8 @@
     switchPage(startPage);
     startAutoRefresh();
     maybeAutoBackupOnPeriodStart();
+    // AI robot greeting on login
+    robotLoginGreeting();
   }
   function switchPage(page) {
     if (page === 'finance' && !isAdmin()) return;
@@ -2290,8 +2502,10 @@
     try { localStorage.setItem('arstudioss_page', page); } catch(e) {}
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.page === page));
     document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
-    // Robot only lives on the CRM page
-    if (page !== 'crm') { stopFloatRobot(); stopAdminRobot(); closeAdminSummary(); }
+    // Robot: float robot only on CRM; admin corner robot stays on every page
+    if (page !== 'crm') { stopFloatRobot(); }
+    // Admin robot persists across all pages
+    if (isAdmin() && !foodOnlyMode() && !leadsOnlyMode()) startAdminRobot();
     renderAll();
   }
   function allEditors() {
@@ -2738,7 +2952,7 @@
     let idleIdx = 0;
     robotState.msgTimer = setInterval(() => {
       if (robotState.angry) return;
-      if (!teamPulseOpen) return;
+      if (!teamPulseOpen && !isEditor()) return;
       showRobotBubble(robotIdleMsgs[idleIdx % robotIdleMsgs.length], false, 8000);
       // Wave along with the message sometimes
       if (Math.random() < 0.35) robotWave(robotState.el);
@@ -2992,7 +3206,38 @@
       ${section('working','🎬','Working now', working.length, workingBody)}
       ${section('done','✅','Just finished', recentlyDone.length, doneBody)}
       ${section('freeing','🕓','Freeing up', freeing.length, freeingBody)}
+      <div style="margin-top:12px;border:1px solid var(--border);border-radius:12px;padding:10px 12px">
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">🤖 Ask the robot</div>
+        <div id="robotAnswer" style="font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:8px;min-height:18px">${window._robotLast || ''}</div>
+        <div style="display:flex;gap:6px">
+          <input id="robotAsk" placeholder="Summary? Who's free? Revenue?" onkeydown="if(event.key==='Enter')askRobot()"
+            style="flex:1;min-width:0;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(5,13,10,0.4);color:var(--text);font-size:12px">
+          <button onclick="askRobot()" style="padding:8px 12px;border-radius:9px;border:0;background:var(--green);color:#04120c;font-weight:700;font-size:12px;cursor:pointer">Ask</button>
+        </div>
+      </div>
     `;
+  }
+
+  async function askRobot() {
+    const input = document.getElementById('robotAsk');
+    const out = document.getElementById('robotAnswer');
+    const q = input && input.value.trim();
+    if (!q || !out) return;
+    out.textContent = 'Thinking…';
+    try {
+      const pk = activePeriodKey();
+      const rows = data.rows.filter(r => (r.period || currentPeriodKey()) === pk).map(r => ({
+        editor: r.editor, status: r.status, deadline: r.deadline, revenue: r.revenue, points: r.points
+      }));
+      const { data: res, error } = await db.functions.invoke('ai-robot', {
+        body: { message: q, role: 'admin', crmData: { period: pk, projects: rows } }
+      });
+      if (error) throw error;
+      window._robotLast = res.reply || res.error || 'No answer.';
+      out.innerHTML = window._robotLast;
+    } catch (e) {
+      out.textContent = 'Robot offline: ' + (e.message || e);
+    }
   }
 
   function pickWanderTarget() {
@@ -3077,6 +3322,8 @@
 
   function onRobotGrab(e) {
     e.preventDefault(); e.stopPropagation();
+    // Editors: open the robot mini-panel instead of dodging
+    if (isEditor()) { openEditorRobot(); return; }
     // A direct click attempt — a quick little sidestep, not a panic sprint
     const s = robotState;
     const b = getPulseBounds(); if (!b) return;
