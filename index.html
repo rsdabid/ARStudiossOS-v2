@@ -37,39 +37,36 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.01em;
-    background: radial-gradient(ellipse at top right, rgba(94,231,176,0.1), transparent 50%),
-      radial-gradient(ellipse at bottom left, rgba(94,231,176,0.05), transparent 50%), var(--bg);
-    color: var(--text); min-height: 100vh; padding: 20px; background-attachment: fixed;
+    background: var(--bg);
+    color: var(--text); min-height: 100vh; padding: 20px;
   }
   html { overflow-x: hidden; }
   .container { max-width: 1400px; margin: 0 auto; }
   .header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 20px; padding: 14px 22px;
-    background: rgba(13,31,24,0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border); border-radius: 100px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
   }
   .logo { font-size: 18px; font-weight: 800; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
   .logo-mark {
-    width: 30px; height: 30px; background: linear-gradient(135deg, var(--green-bright), var(--green));
-    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; background: var(--green);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
     color: #052e20; font-weight: 900; font-size: 15px;
   }
   .header-right { display: flex; gap: 10px; align-items: center; }
   .user-badge {
     font-size: 12px; color: var(--text-dim); padding: 8px 14px;
     background: rgba(94,231,176,0.08); border: 1px solid rgba(94,231,176,0.15);
-    border-radius: 100px; font-weight: 600;
+    border-radius: var(--radius-sm); font-weight: 600;
   }
   .btn {
-    padding: 9px 18px; border: none; border-radius: 100px; font-size: 13px;
-    font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; white-space: nowrap;
+    padding: 9px 18px; border: none; border-radius: var(--radius-sm); font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: all 0.15s ease; font-family: inherit; white-space: nowrap;
   }
   .btn-primary {
-    background: linear-gradient(135deg, var(--green-bright), var(--green));
-    color: #052e20;
+    background: var(--green); color: #052e20;
   }
-  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-primary:hover { background: var(--green-bright); }
   .btn-secondary { background: rgba(94,231,176,0.06); color: var(--text); border: 1px solid var(--border); }
   .btn-secondary:hover { background: rgba(94,231,176,0.12); border-color: var(--border-bright); }
   .btn-ghost { background: transparent; color: var(--text-dim); }
@@ -363,7 +360,7 @@
 
   /* Client CRM */
   .client-section-header { display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-bottom:2px; }
-  .client-avatar { width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--green-deep),var(--green));color:#052e20;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .client-avatar { width:36px;height:36px;border-radius:8px;background:var(--green-deep);color:#052e20;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
 
   /* Client view of their own CRM */
   .client-row { border-bottom:1px solid rgba(28,56,43,0.4); }
@@ -433,9 +430,9 @@
     border-radius: var(--radius-md);
     position: relative;
   }
-  .pulse-compete.lead-strong { border-color: rgba(255,215,0,0.4); background: linear-gradient(100deg, rgba(255,215,0,0.06), rgba(5,13,10,0.5)); }
-  .pulse-compete.lead-mid { border-color: rgba(94,231,176,0.35); background: linear-gradient(100deg, rgba(94,231,176,0.05), rgba(5,13,10,0.5)); }
-  .pulse-compete.behind { border-color: rgba(255,147,71,0.35); background: linear-gradient(100deg, rgba(255,147,71,0.05), rgba(5,13,10,0.5)); }
+  .pulse-compete.lead-strong { border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.04); }
+  .pulse-compete.lead-mid { border-color: rgba(94,231,176,0.25); background: rgba(94,231,176,0.04); }
+  .pulse-compete.behind { border-color: rgba(255,147,71,0.25); background: rgba(255,147,71,0.04); }
   .pulse-compete.tied { border-color: rgba(74,158,255,0.35); }
   .pulse-compete .cmp-emoji { font-size: 30px; flex-shrink: 0; }
   .pulse-compete-msg { flex: 1; }
@@ -605,7 +602,7 @@
   .ar-card-name { font-size: 13px; font-weight: 700; color: var(--text); font-family: var(--font-display); }
   .ar-card-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ar-card-right { font-size: 11px; font-weight: 600; text-align: right; flex-shrink: 0; }
-  .ar-pill { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 100px; letter-spacing: 0.03em; }
+  .ar-pill { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: var(--radius-xs); letter-spacing: 0.03em; }
   .ar-load-idle { color: #8aa3b0; } .ar-load-light { color: var(--green); } .ar-load-busy { color: var(--amber); } .ar-load-over { color: var(--red); }
   .ar-empty { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 8px 0; }
 
@@ -613,22 +610,13 @@
   .rate-input { -moz-appearance: textfield; }
 
   /* Fun leaderboard rankings */
-  @keyframes sparkle { 0%,100% { filter: brightness(1); transform: scale(1); } 50% { filter: brightness(1.15); transform: scale(1.02); } }
-  @keyframes auraGlow { 0%,100% { opacity: 0.92; } 50% { opacity: 1; } }
-  @keyframes sigmaShift { 0%,100% { opacity: 0.85; } 50% { opacity: 1; } }
   @keyframes npcIdle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(1px); } }
-  @keyframes crownBounce { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-2px) rotate(3deg); } }
-  @keyframes goldShimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-  @keyframes ultimatePulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.005); } }
-  @keyframes confettiFloat { 0% { transform: translateY(0) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(-40px) rotate(360deg); opacity: 0; } }
-  @keyframes trophyBob { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.08); } }
 
-  .rank-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 100px; font-size: 10px; font-weight: 800; letter-spacing: 0.3px; margin-left: 6px; white-space: nowrap; will-change: filter, box-shadow, opacity; }
-  .rank-giga { background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,180,0,0.15)); color: var(--gold); animation: sparkle 2s ease-in-out infinite; }
-  .rank-aura { background: linear-gradient(135deg, rgba(180,140,255,0.2), rgba(140,100,255,0.1)); color: var(--purple); animation: auraGlow 3s ease-in-out infinite; }
-  .rank-sigma { background: linear-gradient(135deg, rgba(74,158,255,0.2), rgba(40,120,255,0.1)); color: var(--blue); animation: sigmaShift 4s ease-in-out infinite; }
+  .rank-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius-xs); font-size: 10px; font-weight: 800; letter-spacing: 0.3px; margin-left: 6px; white-space: nowrap; }
+  .rank-giga { background: rgba(255,215,0,0.15); color: var(--gold); }
+  .rank-aura { background: rgba(180,140,255,0.12); color: var(--purple); }
+  .rank-sigma { background: rgba(74,158,255,0.12); color: var(--blue); }
   .rank-npc { background: rgba(90,120,104,0.2); color: var(--text-muted); animation: npcIdle 6s ease-in-out infinite; }
-  .crown { display: inline-block; animation: crownBounce 2s ease-in-out infinite; margin-right: 4px; }
 
   /* Team color dividers */
   .team-divider { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; padding: 14px 4px 8px; margin-top: 6px; display: flex; align-items: center; gap: 8px; border-top: 1px dashed; }
@@ -636,31 +624,18 @@
   .team-divider-dot { width: 8px; height: 8px; border-radius: 50%; }
 
   /* TEAM WINNING — Stage 1: simple gold (weeks 1-3) */
-  .team-gold { position: relative; background: linear-gradient(90deg, rgba(255,215,0,0.08), rgba(255,180,0,0.03), rgba(255,215,0,0.08)); background-size: 200% 100%; border: 1px solid rgba(255,215,0,0.35) !important; animation: goldShimmer 4s ease-in-out infinite; }
-  .gold-trophy { display: inline-block; font-size: 18px; animation: trophyBob 2s ease-in-out infinite; }
-
+  .team-gold { position: relative; background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.25) !important; }
   /* TEAM WINNING — Stage 3: ULTIMATE (day 16 results day) */
-  .team-ultimate { position: relative; background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,180,0,0.08), rgba(255,215,0,0.2)); background-size: 200% 200%; border: 2px solid rgba(255,215,0,0.6) !important; animation: ultimatePulse 2.5s ease-in-out infinite, goldShimmer 5s ease-in-out infinite; overflow: hidden; padding: 16px 14px !important; }
+  .team-ultimate { position: relative; background: rgba(255,215,0,0.08); border: 2px solid rgba(255,215,0,0.4) !important; overflow: hidden; padding: 16px 14px !important; }
   .team-ultimate .ranking-name { font-size: 16px !important; font-weight: 800; }
   .team-ultimate .ranking-points { color: var(--gold) !important; font-size: 24px !important; }
-  .ultimate-trophy { display: inline-block; font-size: 24px; animation: trophyBob 1.5s ease-in-out infinite; }
-
-  /* Confetti for ultimate winner */
-  .confetti-overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-  .confetti-overlay span { position: absolute; font-size: 14px; opacity: 0; animation: confettiFloat 2s ease-out infinite; }
-  .confetti-overlay span:nth-child(1) { left: 10%; animation-delay: 0s; }
-  .confetti-overlay span:nth-child(2) { left: 30%; animation-delay: 0.4s; }
-  .confetti-overlay span:nth-child(3) { left: 50%; animation-delay: 0.8s; }
-  .confetti-overlay span:nth-child(4) { left: 70%; animation-delay: 1.2s; }
-  .confetti-overlay span:nth-child(5) { left: 85%; animation-delay: 0.2s; }
-  .confetti-overlay span:nth-child(6) { left: 20%; animation-delay: 1.6s; }
 
   /* Totals row clickable for admin */
   tr.totals-row.clickable td { cursor: pointer; }
   tr.totals-row.clickable:hover td { background: rgba(94,231,176,0.08); }
   .cell-empty { color: var(--text-muted); font-style: italic; opacity: 0.6; }
   .status-cell { padding: 12px 14px; cursor: pointer; }
-  .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--radius-xs); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
   .status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .status-assigned { background: rgba(74,158,255,0.15); color: var(--blue); }
   .status-progress { background: rgba(255,181,71,0.15); color: var(--amber); }
@@ -669,8 +644,8 @@
   .status-revision { background: rgba(255,82,82,0.15); color: var(--red); }
   .status-done { background: rgba(94,231,176,0.15); color: var(--green); }
   .editor-cell { padding: 12px 14px; cursor: pointer; }
-  .editor-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; background: rgba(94,231,176,0.08); border: 1px solid var(--border); border-radius: 100px; font-size: 12px; font-weight: 600; }
-  .editor-avatar { width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, var(--green-bright), var(--green-deep)); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #052e20; }
+  .editor-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; background: rgba(94,231,176,0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; }
+  .editor-avatar { width: 20px; height: 20px; border-radius: 50%; background: var(--green-deep); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #052e20; }
   .num-cell { padding: 12px 14px; cursor: text; font-weight: 600; }
   .revenue-val { color: var(--green-bright); }
   .fi-badge { display:inline-flex; align-items:center; justify-content:center; margin-left:6px; padding:1px 5px; font-size:9px; font-weight:700; letter-spacing:0.04em; background:rgba(29,168,116,0.15); color:#7ee2b8; border:1px solid rgba(29,168,116,0.4); border-radius:4px; vertical-align:middle; text-transform:lowercase; font-family:var(--font-ui); }
@@ -719,9 +694,9 @@
   .ranking-row:hover { border-color: var(--border); }
   .ranking-row.me { background: rgba(94,231,176,0.06); border-color: rgba(94,231,176,0.2); }
   .rank-num { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 800; font-size: 13px; flex-shrink: 0; }
-  .rank-num.rank-1 { background: linear-gradient(135deg, var(--gold), #f4c430); color: #2a1f00; }
-  .rank-num.rank-2 { background: linear-gradient(135deg, var(--silver), #909090); color: #1a1a1a; }
-  .rank-num.rank-3 { background: linear-gradient(135deg, var(--bronze), #8b5a2b); color: #2a1500; }
+  .rank-num.rank-1 { background: var(--gold); color: #2a1f00; }
+  .rank-num.rank-2 { background: var(--silver); color: #1a1a1a; }
+  .rank-num.rank-3 { background: var(--bronze); color: #2a1500; }
   .rank-num.other { background: rgba(94,231,176,0.08); color: var(--text-dim); border: 1px solid var(--border); }
   .ranking-name-wrap { flex: 1; min-width: 0; }
   .ranking-name { font-weight: 600; font-size: 14px; }
@@ -744,8 +719,8 @@
   .team-section { padding: 16px; background: rgba(5,13,10,0.4); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; }
   .team-section h4 { font-size: 13px; color: var(--green); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; margin-bottom: 12px; }
   .members-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-  .member-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 12px; background: rgba(94,231,176,0.08); border: 1px solid var(--border); border-radius: 100px; font-size: 12px; color: var(--text); }
-  .member-pill .leader-mark { font-size: 10px; color: var(--green); background: rgba(94,231,176,0.15); padding: 1px 6px; border-radius: 100px; }
+  .member-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 12px; background: rgba(94,231,176,0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; color: var(--text); }
+  .member-pill .leader-mark { font-size: 10px; color: var(--green); background: rgba(94,231,176,0.15); padding: 1px 6px; border-radius: 4px; }
   .member-pill button { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 0; transition: color 0.15s; }
   .member-pill button:hover { color: var(--red); }
   .add-member-row { display: flex; gap: 6px; margin-bottom: 16px; }
@@ -757,7 +732,7 @@
   .pwd-toggle:hover { color: var(--green); background: rgba(94,231,176,0.08); }
   .password-row { display: flex; gap: 6px; align-items: center; margin-top: 10px; }
   .password-row button { padding: 11px 16px; background: rgba(94,231,176,0.1); border: 1px solid var(--border); border-radius: 12px; color: var(--green); cursor: pointer; font-weight: 600; font-size: 12px; font-family: inherit; white-space: nowrap; }
-  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(13,31,24,0.95); backdrop-filter: blur(10px); border: 1px solid var(--green-deep); color: var(--green); padding: 12px 20px; border-radius: 100px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg); z-index: 700; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(13,31,24,0.95); backdrop-filter: blur(10px); border: 1px solid var(--green-deep); color: var(--green); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg); z-index: 700; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
   #loadingOverlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; gap: 16px; }
   .spin-mark { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; animation: pulse 1.4s ease-in-out infinite; }
@@ -910,7 +885,7 @@
   .lead-empty-col { text-align: center; font-size: 11px; color: var(--text-muted); opacity: 0.5; padding: 30px 12px; font-style: italic; }
   .lead-progress { height: 4px; background: rgba(255,255,255,0.06); border-radius: 100px; overflow: hidden; margin-top: 9px; }
   .lead-progress-fill { height: 100%; border-radius: 100px; transition: width 0.4s var(--ease-out); }
-  .warm-badge { display: inline-block; margin-top: 7px; margin-left: 6px; padding: 3px 9px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.03em; background: rgba(255,82,82,0.12); color: #ff8a8a; border: 1px solid rgba(255,82,82,0.35); border-radius: 100px; animation: leadPulse 1.8s ease-in-out infinite; }
+  .warm-badge { display: inline-block; margin-top: 7px; margin-left: 6px; padding: 3px 9px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.03em; background: rgba(255,82,82,0.12); color: #ff8a8a; border: 1px solid rgba(255,82,82,0.35); border-radius: var(--radius-xs); }
   .warm-badge.today { background: rgba(255,206,74,0.1); color: #ffce4a; border-color: rgba(255,206,74,0.35); animation: none; }
   .lead-add-card {
     padding: 8px; text-align: center; font-size: 11px; font-weight: 600; color: var(--text-muted);
@@ -1073,7 +1048,7 @@
   .dnd-zone.dnd-over { border-style: solid; filter: brightness(1.15); }
   .dnd-zone-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
   .dnd-members { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; }
-  .dnd-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: rgba(5,13,10,0.5); border: 1px solid; border-radius: 100px; font-size: 13px; cursor: grab; transition: opacity 0.15s, transform 0.15s; user-select: none; }
+  .dnd-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: rgba(5,13,10,0.5); border: 1px solid; border-radius: var(--radius-sm); font-size: 13px; cursor: grab; transition: opacity 0.15s, transform 0.15s; user-select: none; }
   .dnd-pill:active { cursor: grabbing; transform: scale(1.04); }
   .drag-handle { color: var(--text-muted); font-size: 14px; cursor: grab; }
   .dnd-name { font-weight: 600; color: var(--text); }
@@ -1151,11 +1126,11 @@
     </div>
   </div>
   <div class="nav-tabs" id="navTabs">
-    <div class="nav-tab active" data-page="crm" onclick="switchPage('crm')">📋 Editors</div>
-    <div class="nav-tab" data-page="clients" onclick="switchPage('clients')" id="clientsTab" style="display:none">🤝 Clients</div>
-    <div class="nav-tab" data-page="leaderboard" onclick="switchPage('leaderboard')">🏆 Leaderboard</div>
-    <div class="nav-tab" data-page="finance" onclick="switchPage('finance')" id="financeTab">💰 Finance</div>
-    <div class="nav-tab" data-page="leads" onclick="switchPage('leads')" id="leadsTab" style="display:none">🎯 Leads</div>
+    <div class="nav-tab active" data-page="crm" onclick="switchPage('crm')">Editors</div>
+    <div class="nav-tab" data-page="clients" onclick="switchPage('clients')" id="clientsTab" style="display:none">Clients</div>
+    <div class="nav-tab" data-page="leaderboard" onclick="switchPage('leaderboard')">Leaderboard</div>
+    <div class="nav-tab" data-page="finance" onclick="switchPage('finance')" id="financeTab">Finance</div>
+    <div class="nav-tab" data-page="leads" onclick="switchPage('leads')" id="leadsTab" style="display:none">Leads</div>
   </div>
 
   <div class="page active" id="page-crm">
@@ -2404,7 +2379,7 @@
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(4,18,12,0.85);backdrop-filter:blur(8px);opacity:0;transition:opacity 0.4s';
     const card = document.createElement('div');
     card.style.cssText = 'max-width:420px;padding:32px 28px;border-radius:20px;text-align:center;transform:scale(0.8);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);'
-      + (isRude ? 'background:linear-gradient(135deg,#1a0a0a,#2a1515);border:1px solid rgba(255,80,80,0.3);' : 'background:linear-gradient(135deg,#0a1a15,#152a20);border:1px solid rgba(94,231,176,0.3);');
+      + (isRude ? 'background:#1a0a0a;border:1px solid rgba(255,80,80,0.2);' : 'background:#0a1a15;border:1px solid rgba(94,231,176,0.2);');
     card.innerHTML = `
       <div style="margin-bottom:10px">${robotSVG().replace('<svg ', '<svg width="48" height="56" ')}</div>
       <div style="font-size:14px;line-height:1.6;color:var(--text,#e8efe4);margin-bottom:20px">${text}</div>
@@ -2528,7 +2503,7 @@
     const lbTab = document.querySelector('.nav-tab[data-page="leaderboard"]');
     const leadsTab = document.getElementById('leadsTab');
     if (isAdmin()) {
-      const badge = leadsOnlyMode() ? '🎯 Leads' : foodOnlyMode() ? '🍽️ Food' : pmOnlyMode() ? '📊 Manager' : '⚡ Admin';
+      const badge = leadsOnlyMode() ? 'Leads' : foodOnlyMode() ? 'Food' : pmOnlyMode() ? 'Manager' : 'Admin';
       document.getElementById('userBadge').textContent = badge;
       const kioskMode = foodOnlyMode() || leadsOnlyMode(); // single-page restricted logins
       const crmTab = document.querySelector('.nav-tab[data-page="crm"]');
@@ -3300,7 +3275,7 @@
     // Sort busiest first
     editors.sort((a,b) => b.active.length - a.active.length);
 
-    const avatar = (e) => `<div class="ar-avatar" style="background:linear-gradient(135deg,${e.color},${e.color}cc)">${escapeHtml(e.name[0].toUpperCase())}</div>`;
+    const avatar = (e) => `<div class="ar-avatar" style="background:${e.color}">${escapeHtml(e.name[0].toUpperCase())}</div>`;
     const fmtDate = (iso) => iso ? new Date(iso+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
 
     // ---- Currently working (active editors, busiest first) ----
@@ -3759,7 +3734,7 @@
         }
         const pipeStat = m.pipePts > 0 ? ` <span class="pts-pipe">(+${m.pipePts} in pipeline)</span>` : '';
         html += `<div class="pulse-member">
-          <div class="pulse-member-avatar" style="background:linear-gradient(135deg, ${teamColor}, ${teamColor}cc)">${escapeHtml(initial)}</div>
+          <div class="pulse-member-avatar" style="background:${teamColor}">${escapeHtml(initial)}</div>
           <div class="pulse-projects">
             <div class="pulse-member-name">${escapeHtml(m.name)}</div>
             <div class="pulse-member-stats">
@@ -3861,7 +3836,7 @@
       html += `<div class="client-section" style="margin-bottom:32px">
         <div class="client-section-header">
           <div style="display:flex;align-items:center;gap:12px">
-            <div class="client-avatar" style="background:linear-gradient(135deg, ${color}, ${color}dd);color:#fff">${escapeHtml(name[0].toUpperCase())}</div>
+            <div class="client-avatar" style="background:${color};color:#fff">${escapeHtml(name[0].toUpperCase())}</div>
             <div>
               <div style="font-size:16px;font-weight:700;color:var(--text);font-family:var(--font-display);letter-spacing:-0.01em">${escapeHtml(name)}</div>
               <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${myRows.length} project${myRows.length===1?'':'s'} · ${doneRows.length} done${pending?` · ${pending} pending`:''}</div>
@@ -4971,10 +4946,10 @@
     function funTag(name) {
       const i = globalRank[name];
       if (i == null) return '';
-      if (i === 0) return `<span class="rank-tag rank-giga"><span class="crown">👑</span>GIGA CHAD</span>`;
-      if (i === 1) return `<span class="rank-tag rank-aura">✨ AURA FARMER</span>`;
-      if (i === 2) return `<span class="rank-tag rank-sigma">💪 SIGMA</span>`;
-      if (totalEds > 3 && i === totalEds - 1) return `<span class="rank-tag rank-npc">🧱 NPC</span>`;
+      if (i === 0) return `<span class="rank-tag rank-giga">GIGA CHAD</span>`;
+      if (i === 1) return `<span class="rank-tag rank-aura">AURA FARMER</span>`;
+      if (i === 2) return `<span class="rank-tag rank-sigma">SIGMA</span>`;
+      if (totalEds > 3 && i === totalEds - 1) return `<span class="rank-tag rank-npc">NPC</span>`;
       return '';
     }
 
@@ -4994,17 +4969,16 @@
         if (stage === 3) {
           // ULTIMATE WINNER (day 16)
           rowCls += ' team-ultimate';
-          badge = `<div class="rank-num"><span class="ultimate-trophy">🏆</span></div>`;
+          badge = `<div class="rank-num rank-1">1</div>`;
           extraStyle = '';
-          confetti = '<div class="confetti-overlay"><span>✨</span><span>🎉</span><span>⭐</span><span>✨</span><span>🎊</span><span>⭐</span></div>';
         } else if (stage === 1) {
           // SIMPLE GOLD (weeks 1-3)
           rowCls += ' team-gold';
-          badge = `<div class="rank-num"><span class="gold-trophy">🏆</span></div>`;
+          badge = `<div class="rank-num rank-1">1</div>`;
           extraStyle = '';
         }
       }
-      return `<div class="${rowCls}" style="${extraStyle}">${confetti}${badge}
+      return `<div class="${rowCls}" style="${extraStyle}">${badge}
         <div class="ranking-name-wrap">
           <div class="ranking-name">${escapeHtml(t.leader)} <span style="color:${tc.main};font-weight:600;font-size:11px">· ${escapeHtml(t.name)}</span></div>
         </div>
@@ -5025,7 +4999,7 @@
         return `<div class="ranking-row" style="border-left:3px solid ${color.main};background:${color.soft}">
           <div class="rank-num ${rc}">${i+1}</div>
           <div class="ranking-name-wrap">
-            <div class="ranking-name">${isGiga?'<span class="crown">👑</span>':''}${escapeHtml(e.name)}${e.leader?'<span style="color:'+color.main+';font-size:10px;margin-left:6px">★</span>':''}${tag}</div>
+            <div class="ranking-name">${escapeHtml(e.name)}${e.leader?'<span style="color:'+color.main+';font-size:10px;margin-left:6px">★</span>':''}${tag}</div>
           </div>
           <div class="ranking-points" style="color:${color.main}">${e.points}</div>
         </div>`;
@@ -7354,7 +7328,7 @@
     document.getElementById('confirmTitle').textContent = title;
     document.getElementById('confirmMessage').textContent = message;
     const btn = document.getElementById('confirmActionBtn'); btn.textContent = actionLabel; btn.style.display = '';
-    if (isDanger) { btn.style.background = 'linear-gradient(135deg,#ff7373,#ff5252)'; btn.style.color = '#fff'; }
+    if (isDanger) { btn.style.background = '#ff5252'; btn.style.color = '#fff'; }
     else { btn.style.background = ''; btn.style.color = ''; }
     btn.onclick = () => { closeModal('confirmModal'); onConfirm(); };
     document.getElementById('confirmModal').classList.add('show');
