@@ -2528,11 +2528,13 @@
       setTimeout(() => startFloatRobot(), 1500);
       // One-time Mr. Mokles intro card
       try {
-        if (!localStorage.getItem('mokles_intro_seen')) {
+        const lastShown = parseInt(localStorage.getItem('mokles_intro_last') || '0');
+        const threeDays = 3 * 24 * 60 * 60 * 1000;
+        if (Date.now() - lastShown > threeDays) {
           setTimeout(() => {
             const ov = document.createElement('div'); ov.id = 'moklesIntroOverlay'; document.body.appendChild(ov);
             const card = document.createElement('div'); card.id = 'moklesIntroCard';
-            card.innerHTML = `<div class="mic-emoji">🤖</div><div class="mic-name">মি. মোকলেস</div><div class="mic-body">তোর নতুন AI boss. এখন থেকে আমি তোর উপর নজর রাখব.</div><button class="mic-dismiss" onclick="document.getElementById('moklesIntroCard').remove();document.getElementById('moklesIntroOverlay').remove();try{localStorage.setItem('mokles_intro_seen','1')}catch(e){}">ঠিক আছে</button>`;
+            card.innerHTML = `<div class="mic-emoji">🤖</div><div class="mic-name">মি. মোকলেস</div><div class="mic-body">তোর নতুন AI boss. এখন থেকে আমি তোর উপর নজর রাখব.</div><button class="mic-dismiss" onclick="document.getElementById('moklesIntroCard').remove();document.getElementById('moklesIntroOverlay').remove();try{localStorage.setItem('mokles_intro_last',String(Date.now()))}catch(e){}">ঠিক আছে</button>`;
             document.body.appendChild(card);
             requestAnimationFrame(() => { ov.classList.add('show'); card.classList.add('show'); });
           }, 2200);
